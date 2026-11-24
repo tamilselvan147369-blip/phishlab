@@ -1,0 +1,43 @@
+# Python bytecode & cache
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+
+# Virtual Environment
+.venv/
+venv/
+ENV/
+env/
+
+# Environment Variables & Secrets
+.env
+.env.*
+!.env.example
+
+# Local SQLite Databases
+database/*.db
+*.db
+*.sqlite3
+instance/
+
+# Local Demonstration Uploads (ephemeral sandbox files)
+database/demonstration_uploads/*
+!database/demonstration_uploads/.gitkeep
+uploads/
+*.pdf
+*.docx
+
+# IDE and OS artifacts
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Test & coverage artifacts & scratch
+htmlcov/
+.coverage
+.coverage.*
+scratch/
+app_backup.py
+render_pages.py

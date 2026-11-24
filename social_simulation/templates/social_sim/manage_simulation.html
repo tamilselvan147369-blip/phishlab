@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+{% block title %}Manage Simulation: {{ simulation.name }} - PhishLab{% endblock %}
+{% block content %}
+<div class="manage-sim">
+    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333; padding-bottom: 15px; margin-bottom: 25px;">
+        <div>
+            <h1 style="color: #7DF9FF; margin: 0 0 5px 0;">{{ simulation.name }}</h1>
+            <p style="color: #aaa; margin: 0;">Status: <strong style="color: {% if simulation.status == 'active' %}#27ae60{% else %}#f39c12{% endif %};">{{ simulation.status|upper }}</strong> | Created: {{ simulation.created_at.strftime('%Y-%m-%d %H:%M') if simulation.created_at else '' }}</p>
+        </div>
+        <div style="display: flex; gap: 10px;">
+            <form method="post" action="{{ url_for('social_sim.toggle_status', sim_id=simulation.id) }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                <button type="submit" class="btn btn-warning">{% if simulation.status == 'active' %}Pause Simulation{% else %}Resume Simulation{% endif %}</button>
+            </form>
+            <a href="{{ url_for('social_sim.dashboard') }}" class="btn btn-secondary">Back to Dashboard</a>
+        </div>
+    </div>
+
+    <!-- Platform Participant Launch Links -->
+    <h2 style="color: #7DF9FF;">Participant Simulation Portals</h2>
+    <p style="color: #bbb;">Share these training links with consenting participants to launch their platform simulation:</p>
+    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 15px; margin: 20px 0 35px 0;">
+        {% for p in simulation.get_platform_list() %}
+        <div style="background: rgba(17, 27, 45, 0.85); padding: 15px; border-radius: 8px; border: 1px solid #444;">
+            <h4 style="margin: 0 0 8px 0; color: #7DF9FF;">{{ platforms[p] }}</h4>
+            <div style="font-size: 0.85rem; color: #888; margin-bottom: 12px; word-break: break-all;">
+                <code>/social/consent/{{ p }}/{{ simulation.id }}</code>
+            </div>
+            <a href="{{ url_for('social_sim.consent_gate', platform=p, sim_id=simulation.id) }}" target="_blank" class="btn btn-sm btn-primary" style="width: 100%; text-align: center; box-sizing: border-box;">Open {{ platforms[p] }} Simulation ↗</a>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Conversations in this simulation -->
+    <h2 style="color: #7DF9FF;">Configured Conversations & Scenarios ({{ conversations|length }})</h2>
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Platform</th>
+                <th>Title / Contact</th>
+                <th>Type</th>
+                <th>Messages</th>
+                <th>Suspicious?</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for c in conversations %}
+            <tr>
+                <td>{{ c.id }}</td>
+                <td><span style="background: #222; padding: 2px 6px; border-radius: 4px; font-size: 0.85rem;">{{ c.platform|title }}</span></td>
+                <td><strong>{{ c.title }}</strong></td>
+                <td>{{ c.conversation_type }}</td>
+                <td>{{ c.messages|length }}</td>
+                <td>
+                    {% set has_sus = c.messages|selectattr('is_suspicious')|list|length > 0 %}
+                    {% if has_sus %}
+                        <span style="color: #e74c3c; font-weight: bold;">Yes (Phishing Lure)</span>
+                    {% else %}
+                        <span style="color: #27ae60;">Baseline / Benign</span>
+                    {% endif %}
+                </td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+
+    <!-- Participants enrolled -->
+    <h2 style="color: #7DF9FF; margin-top: 40px;">Enrolled Participants ({{ participants|length }})</h2>
+    {% if participants %}
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>UUID</th>
+                <th>Alias</th>
+                <th>Consent Status</th>
+                <th>Consent Timestamp</th>
+                <th>Interactions</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for part in participants %}
+            <tr>
+                <td><code>{{ part.participant_uuid }}</code></td>
+                <td>{{ part.alias }}</td>
+                <td><span style="color: #27ae60; font-weight: bold;">Consented</span></td>
+                <td>{{ part.consent_timestamp.strftime('%Y-%m-%d %H:%M:%S') if part.consent_timestamp else '' }}</td>
+                <td>{{ part.events|length }}</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p style="color: #888;">No participants have initiated this simulation campaign yet.</p>
+    {% endif %}
+</div>
+{% endblock %}

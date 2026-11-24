@@ -1,0 +1,254 @@
+/* Dark theme with glassmorphism styling for PhishLab */
+body.dark-bg {
+    background-color: #080D18;
+    color: #E0E7FF;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+/* Sidebar Navigation */
+.sidebar {
+    width: 220px;
+    background: rgba(17, 27, 45, 0.85);
+    padding: 20px;
+    height: 100vh;
+    box-sizing: border-box;
+    backdrop-filter: blur(8px);
+    transition: transform 0.3s ease-in-out;
+    position: relative;
+    z-index: 10;
+}
+
+.sidebar h2 {
+    color: #7DF9FF; /* electric blue */
+    margin-bottom: 30px;
+    font-size: 1.5rem;
+}
+
+.sidebar ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.sidebar li {
+    margin: 15px 0;
+}
+
+.sidebar a {
+    color: #E0E7FF;
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.sidebar a.active,
+.sidebar a:hover {
+    color: #7DF9FF;
+}
+
+/* Mobile Sidebar & Toggle */
+.sidebar.open {
+    transform: translateX(0);
+}
+
+.sidebar-toggle {
+    display: none;
+    background: none;
+    border: none;
+    color: #E0E7FF;
+    font-size: 1.5rem;
+    cursor: pointer;
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    z-index: 20;
+}
+
+/* Focus styles for accessibility */
+a:focus,
+button:focus,
+.sidebar-toggle:focus {
+    outline: 2px solid #7DF9FF;
+    outline-offset: 2px;
+}
+
+/* Main Content Area */
+.main-content {
+    flex: 1;
+    padding: 30px;
+    overflow-y: auto;
+}
+
+/* Dashboard Metric Cards */
+.cards {
+    display: flex;
+    flex-direction: row;
+    gap: 20px;
+    flex-wrap: wrap;
+    margin-bottom: 30px;
+}
+
+.card {
+    background: rgba(17, 27, 45, 0.8);
+    border-radius: 12px;
+    padding: 20px;
+    min-width: 150px;
+    flex: 1 1 200px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+    backdrop-filter: blur(6px);
+    text-align: center;
+}
+
+.card h3 {
+    margin: 0 0 10px;
+    color: #7DF9FF;
+    font-size: 1.1rem;
+}
+
+.card p {
+    margin: 0;
+    font-size: 1.4rem;
+    font-weight: bold;
+    color: #FFCC00; /* warning */
+}
+
+/* Form Controls */
+form .form-group {
+    margin-bottom: 15px;
+}
+
+form .form-control {
+    width: 100%;
+    padding: 8px;
+    border-radius: 6px;
+    border: 1px solid #555;
+    background: #111B2D;
+    color: #E0E7FF;
+    box-sizing: border-box;
+}
+
+/* Buttons */
+.btn {
+    background: #7DF9FF;
+    border: none;
+    color: #080D18;
+    padding: 10px 20px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: bold;
+    text-decoration: none;
+    display: inline-block;
+}
+
+.btn-primary {
+    background: #7DF9FF;
+    color: #080D18;
+}
+
+.btn-secondary {
+    background: #555;
+    color: #fff;
+}
+
+.btn-danger {
+    background: #e74c3c;
+    color: #fff;
+}
+
+.btn-warning {
+    background: #f39c12;
+    color: #fff;
+}
+
+.btn-info {
+    background: #3498db;
+    color: #fff;
+}
+
+.btn-sm {
+    padding: 5px 10px;
+    font-size: 0.85rem;
+}
+
+/* Tables */
+table,
+.table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 20px 0;
+    color: #E0E7FF;
+}
+
+table th,
+table td,
+.table th,
+.table td {
+    padding: 10px 12px;
+    text-align: left;
+    border-bottom: 1px solid #333;
+}
+
+table th,
+.table th {
+    background: rgba(17, 27, 45, 0.9);
+    color: #7DF9FF;
+}
+
+.table-striped tbody tr:nth-of-type(odd) {
+    background-color: rgba(255, 255, 255, 0.03);
+}
+
+/* Callouts & Disclaimers */
+.info {
+    background: rgba(255, 165, 0, 0.2);
+    padding: 10px;
+    border-left: 4px solid orange;
+    margin: 15px 0;
+}
+
+.disclaimer {
+    font-size: 0.9rem;
+    color: #AAA;
+    margin-top: 10px;
+}
+
+/* Responsive Media Queries */
+@media (max-width: 768px) {
+    body.dark-bg {
+        flex-direction: column;
+    }
+
+    .cards {
+        flex-direction: column;
+    }
+
+    .sidebar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        height: 100vh;
+        width: 220px;
+        transform: translateX(0);
+    }
+
+    .sidebar.collapsed {
+        transform: translateX(-100%);
+    }
+
+    .sidebar-toggle {
+        display: block;
+    }
+
+    .main-content {
+        padding: 15px;
+    }
+
+    table {
+        display: block;
+        overflow-x: auto;
+        white-space: nowrap;
+    }
+}

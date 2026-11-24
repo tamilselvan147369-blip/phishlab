@@ -1,0 +1,101 @@
+{% extends "social_sim/platforms/base_platform.html" %}
+
+{% block platform_css %}
+    .wa-app { display: flex; width: 100%; height: 100%; background: #111b21; color: #e9edef; }
+    .wa-sidebar { width: 340px; border-right: 1px solid #222d34; background: #111b21; display: flex; flex-direction: column; }
+    .wa-side-header { background: #202c33; padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; font-weight: bold; color: #aebac1; }
+    .wa-chat-list { flex: 1; overflow-y: auto; list-style: none; padding: 0; margin: 0; }
+    .wa-chat-item { display: flex; padding: 12px 16px; border-bottom: 1px solid #202c33; cursor: pointer; text-decoration: none; color: inherit; align-items: center; gap: 12px; }
+    .wa-chat-item:hover, .wa-chat-item.active { background: #2a3942; }
+    .wa-avatar { width: 44px; height: 44px; border-radius: 50%; background: #202c33; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; }
+    .wa-chat-main { flex: 1; display: flex; flex-direction: column; background: #0b141a; }
+    .wa-chat-header { background: #202c33; padding: 10px 16px; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid #222d34; }
+    .wa-messages-area { flex: 1; padding: 20px 40px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; background-image: radial-gradient(#202c33 1px, transparent 1px); background-size: 20px 20px; }
+    .wa-bubble { max-width: 65%; padding: 8px 14px; border-radius: 8px; font-size: 0.95rem; line-height: 1.4; position: relative; box-shadow: 0 1px 2px rgba(0,0,0,0.3); }
+    .wa-bubble.incoming { background: #202c33; align-self: flex-start; border-top-left-radius: 0; }
+    .wa-bubble.outgoing { background: #005c4b; align-self: flex-end; border-top-right-radius: 0; }
+    .wa-bubble-meta { font-size: 0.72rem; color: #8696a0; text-align: right; margin-top: 4px; display: flex; align-items: center; justify-content: flex-end; gap: 4px; }
+    .wa-link-box { background: rgba(0,0,0,0.25); border-left: 3px solid #00a884; padding: 8px; margin: 8px 0; border-radius: 4px; }
+    .wa-link-box a { color: #53bdeb; text-decoration: underline; font-weight: bold; word-break: break-all; }
+    .wa-att-box { background: rgba(0,0,0,0.25); border: 1px dashed #00a884; padding: 10px; margin: 8px 0; border-radius: 6px; display: flex; align-items: center; gap: 10px; cursor: pointer; }
+    .wa-input-bar { background: #202c33; padding: 12px 16px; display: flex; align-items: center; gap: 12px; color: #8696a0; }
+    .wa-input-fake { flex: 1; background: #2a3942; border-radius: 8px; padding: 9px 15px; color: #8696a0; font-size: 0.9rem; }
+{% endblock %}
+
+{% block platform_content %}
+<div class="wa-app">
+    <!-- Chats Sidebar -->
+    <div class="wa-sidebar">
+        <div class="wa-side-header">
+            <span>WhatsApp Simulation</span>
+            <span style="color: #25D366; font-size: 1.2rem;">●</span>
+        </div>
+        <ul class="wa-chat-list">
+            {% for c in conversations %}
+            <a href="{{ url_for('social_sim.simulate_platform', platform=platform, sim_id=simulation.id, conv_id=c.id) }}" class="wa-chat-item {% if active_conv and active_conv.id == c.id %}active{% endif %}">
+                <div class="wa-avatar">{{ c.sender_avatar or '📱' }}</div>
+                <div style="flex: 1; overflow: hidden;">
+                    <div style="font-weight: 600; white-space: nowrap; text-overflow: ellipsis; overflow: hidden;">{{ c.title }}</div>
+                    <div style="font-size: 0.8rem; color: #8696a0;">{{ c.subtitle }}</div>
+                </div>
+            </a>
+            {% endfor %}
+        </ul>
+    </div>
+
+    <!-- Active Chat Conversation -->
+    <div class="wa-chat-main">
+        {% if active_conv %}
+        <div class="wa-chat-header">
+            <div class="wa-avatar">{{ active_conv.sender_avatar or '📱' }}</div>
+            <div style="flex: 1;">
+                <div style="font-weight: bold;">{{ active_conv.title }}</div>
+                <div style="font-size: 0.78rem; color: #00a884;">{{ active_conv.subtitle }}</div>
+            </div>
+            <button onclick="reportSuspiciousMessage({{ active_conv.messages[0].id if active_conv.messages else 0 }}, {{ active_conv.id }})" class="btn btn-sm btn-danger" style="margin-right: 5px;">🛡️ Report Suspicious</button>
+        </div>
+
+        <div class="wa-messages-area">
+            {% for msg in active_conv.messages %}
+            <div class="wa-bubble {% if msg.is_from_user %}outgoing{% else %}incoming{% endif %}">
+                {% if not msg.is_from_user and active_conv.conversation_type == 'group' %}
+                <div style="color: #53bdeb; font-size: 0.78rem; font-weight: bold; margin-bottom: 2px;">{{ msg.sender_name }}</div>
+                {% endif %}
+                <div>{{ msg.content }}</div>
+
+                {% if msg.simulated_link %}
+                <div class="wa-link-box">
+                    <div style="font-size: 0.75rem; color: #aaa;">SIMULATED LINK:</div>
+                    <a href="#" onclick="handleLinkClick(event, '{{ msg.simulated_link }}', {{ msg.id }}, {{ active_conv.id }})">{{ msg.simulated_link }}</a>
+                </div>
+                {% endif %}
+
+                {% if msg.attachment_name %}
+                <div class="wa-att-box" onclick="handleAttachmentClick(event, '{{ msg.attachment_name }}', {{ msg.id }}, {{ active_conv.id }})">
+                    <span style="font-size: 1.5rem;">📄</span>
+                    <div>
+                        <div style="font-weight: bold; font-size: 0.88rem;">{{ msg.attachment_name }}</div>
+                        <div style="font-size: 0.75rem; color: #aaa;">Click to inspect simulated document</div>
+                    </div>
+                </div>
+                {% endif %}
+
+                <div class="wa-bubble-meta">
+                    <span>12:45 PM</span>
+                    {% if msg.is_from_user %}
+                    <span style="color: #53bdeb;">✓✓</span>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <div class="wa-input-bar">
+            <span>📎</span>
+            <div class="wa-input-fake">This is a read-only security awareness simulation. Type disabled.</div>
+            <span style="color: #00a884;">🎤</span>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

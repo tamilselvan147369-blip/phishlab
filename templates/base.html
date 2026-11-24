@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}PhishLab{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        .navbar { display: flex; justify-content: space-between; align-items: center; background: #1a1a2e; padding: 14px 30px; border-bottom: 2px solid #333; width: 100%; box-sizing: border-box; }
+        .nav-links { display: flex; align-items: center; flex-wrap: wrap; gap: 18px; }
+        .nav-links a { color: #e0e0e0; text-decoration: none; font-weight: 500; font-size: 0.95rem; }
+        .nav-links a:hover { color: #00adb5; }
+        .flash-messages { max-width: 1000px; margin: 15px auto; padding: 0 15px; width: 100%; box-sizing: border-box; }
+        .alert { padding: 12px 18px; border-radius: 4px; margin-bottom: 10px; }
+        .alert-success { background: #27ae60; color: #fff; }
+        .alert-danger { background: #c0392b; color: #fff; }
+        .alert-warning { background: #f39c12; color: #fff; }
+        .alert-info { background: #2980b9; color: #fff; }
+        .container { max-width: 1100px; margin: 25px auto; padding: 0 20px; width: 100%; box-sizing: border-box; flex: 1; }
+    </style>
+</head>
+<body class="dark-bg">
+    <header class="navbar">
+        <div class="nav-brand">
+            <h2 style="margin: 0; color: #00adb5;"><a href="{{ url_for('dashboard') }}" style="color: inherit; text-decoration: none;">PhishLab</a></h2>
+        </div>
+        <nav class="nav-links">
+            <a href="{{ url_for('dashboard') }}">Dashboard</a>
+            <a href="{{ url_for('security_platform.operations_dashboard') }}" style="color: #7DF9FF; font-weight: bold; background: rgba(125, 249, 255, 0.15); padding: 4px 10px; border-radius: 4px; border: 1px solid #7DF9FF;">🛡️ Security Platform</a>
+            <a href="{{ url_for('social_sim.generator_dashboard') }}" style="color: #00adb5; font-weight: bold; background: rgba(0, 173, 181, 0.15); padding: 4px 10px; border-radius: 4px; border: 1px solid #00adb5;">⚡ Unified Generator</a>
+            <a href="{{ url_for('create_campaign') }}">New Campaign</a>
+            <a href="{{ url_for('campaign_history') }}">Campaigns</a>
+            <a href="{{ url_for('social_sim.dashboard') }}" style="color: #25D366; font-weight: bold;">Social Media Sim</a>
+            <a href="{{ url_for('realapp.exercise_history') }}">Real-App Exercises</a>
+            <a href="{{ url_for('realapp.analytics') }}">Analytics</a>
+            <a href="{{ url_for('realapp.audit_log') }}">Audit Log</a>
+            {% if session.get('is_admin') %}
+                <a href="{{ url_for('admin_logout') }}" style="color: #e74c3c;">Logout ({{ session.get('admin_name', 'Admin') }})</a>
+            {% else %}
+                <a href="{{ url_for('admin_login') }}">Admin Login</a>
+            {% endif %}
+        </nav>
+    </header>
+
+    <div class="flash-messages">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+    </div>
+
+    <main class="container">
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer style="text-align: center; padding: 24px; color: #777; border-top: 1px solid #333; margin-top: 40px;">
+        <p>&copy; 2026 PhishLab – Cybersecurity Awareness & Simulation Platform (Educational / Authorized Use Only)</p>
+    </footer>
+</body>
+</html>

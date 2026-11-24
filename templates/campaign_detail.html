@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Campaign Details - PhishLab</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body class="dark-bg">
+{% include 'sidebar.html' %}
+<div class="main-content">
+    <h1>Campaign "{{ campaign.name }}" Details</h1>
+    <p><strong>UUID:</strong> {{ campaign.uuid }}</p>
+    <p><strong>Status:</strong> {{ campaign.status }}</p>
+    <p><strong>Scenario:</strong> {{ campaign.scenario }}</p>
+    <p><strong>Subject:</strong> {{ campaign.subject }}</p>
+    <p><strong>Sender:</strong> {{ campaign.sender_name }}</p>
+    <p><strong>Recipient:</strong> {{ campaign.recipient }}</p>
+    <p><strong>Description:</strong> {{ campaign.description|default('(none)') }}</p>
+    <p><strong>Created at:</strong> {{ campaign.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</p>
+    <p>
+        <a href="{{ url_for('edit_campaign', cid=campaign.id) }}" class="btn btn-primary">Edit</a>
+        <a href="{{ url_for('delete_campaign', cid=campaign.id) }}" class="btn btn-danger">Delete</a>
+        <a href="{{ url_for('email_preview', cid=campaign.id) }}" class="btn btn-primary">Preview Email</a>
+        <a href="{{ url_for('campaign_results', cid=campaign.id) }}" class="btn btn-primary">Results</a>
+    </p>
+</div>
+<script src="{{ url_for('static', filename='js/sidebar.js') }}"></script>
+</body>
+</html>

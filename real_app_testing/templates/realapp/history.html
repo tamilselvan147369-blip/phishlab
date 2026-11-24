@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}Real‑App Exercise History{% endblock %}
+{% block content %}
+<h2>Real‑App Exercises</h2>
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Campaign</th>
+            <th>Platform</th>
+            <th>Status</th>
+            <th>Expires</th>
+            <th>Revoked</th>
+            <th>Participants</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+    {% for ex in exercises %}
+        <tr>
+            <td>{{ ex.id }}</td>
+            <td>{{ ex.campaign.name }}</td>
+            <td>{{ ex.platform }}</td>
+            <td>{{ ex.status }}</td>
+            <td>{{ ex.token_expires_at }}</td>
+            <td>{% if ex.revoked_at %}Yes{% else %}No{% endif %}</td>
+            <td>{{ ex.participants|length }}</td>
+            <td>
+                {% if not ex.revoked_at %}
+                <form method="post" action="{{ url_for('realapp.revoke_exercise', exercise_id=ex.id) }}" style="display:inline;">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                    <button class="btn btn-sm btn-warning" type="submit">Revoke</button>
+                </form>
+                {% endif %}
+                <a class="btn btn-sm btn-info" href="{{ url_for('realapp.demo_page', token='REPLACE_WITH_TOKEN') }}">Demo Link</a>
+            </td>
+        </tr>
+    {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

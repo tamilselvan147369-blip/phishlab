@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Campaign History - PhishLab</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body class="dark-bg">
+{% include 'sidebar.html' %}
+<div class="main-content">
+    <h1>Campaign History</h1>
+    {% if campaigns %}
+    <div class="cards">
+        {% for c in campaigns %}
+        <div class="card">
+            <h3>{{ c.name }}</h3>
+            <p>Status: {{ c.status }}</p>
+            <p>Created: {{ c.created_at.strftime('%Y-%m-%d %H:%M') }}</p>
+            <p><a href="{{ url_for('campaign_detail', cid=c.id) }}" class="btn btn-primary">Details</a></p>
+        </div>
+
+        {% endfor %}
+    </div>
+
+    {% else %}
+        <p class="info">No campaigns have been created yet.</p>
+    {% endif %}
+</div>
+
+<script src="{{ url_for('static', filename='js/sidebar.js') }}"></script>
+</body>
+</html>

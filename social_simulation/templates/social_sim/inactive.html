@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block title %}Simulation Inactive - PhishLab{% endblock %}
+{% block content %}
+<div style="max-width: 550px; margin: 60px auto; text-align: center; background: rgba(17, 27, 45, 0.85); padding: 40px; border-radius: 12px; border: 1px solid #444;">
+    <h2 style="color: #f39c12;">Exercise Paused or Completed</h2>
+    <p style="color: #ccc; margin: 20px 0;">The simulation campaign <strong>{{ simulation.name }}</strong> is currently not active. Please contact your security training administrator.</p>
+    <a href="{{ url_for('social_sim.dashboard') }}" class="btn btn-primary">Return to Simulation Dashboard</a>
+</div>
+{% endblock %}

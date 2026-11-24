@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block title %}Cross-Platform Simulation Analytics - PhishLab{% endblock %}
+{% block content %}
+<div class="social-analytics">
+    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333; padding-bottom: 15px; margin-bottom: 25px;">
+        <div>
+            <h1 style="color: #7DF9FF; margin: 0 0 5px 0;">Cross-Platform Awareness Analytics</h1>
+            <p style="color: #aaa; margin: 0;">Comparative threat resilience, link susceptibility, and reporting rates across all 6 platforms.</p>
+        </div>
+        <div style="display: flex; gap: 10px;">
+            <a href="{{ url_for('social_sim.export_csv') }}" class="btn btn-primary">📥 Export CSV Report</a>
+            <a href="{{ url_for('social_sim.dashboard') }}" class="btn btn-secondary">Dashboard</a>
+        </div>
+    </div>
+
+    <!-- Key Metrics Cards -->
+    <div class="cards" style="display: flex; gap: 15px; margin-bottom: 30px;">
+        <div class="card" style="flex: 1;">
+            <h3>Total Participants</h3>
+            <p>{{ total_participants }}</p>
+        </div>
+        <div class="card" style="flex: 1;">
+            <h3>Tracked Interactions</h3>
+            <p>{{ total_events }}</p>
+        </div>
+        <div class="card" style="flex: 1;">
+            <h3>Average Quiz Accuracy</h3>
+            <p style="color: {% if overall_accuracy >= 70 %}#27ae60{% elif overall_accuracy >= 50 %}#f39c12{% else %}#e74c3c{% endif %};">{{ overall_accuracy }}%</p>
+        </div>
+    </div>
+
+    <!-- 6 Platform Comparative Table -->
+    <h2 style="color: #7DF9FF; margin-top: 30px;">Platform Resilience Comparison</h2>
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Platform</th>
+                <th>Message Views</th>
+                <th>Phishing Clicks</th>
+                <th>Attachment Previews</th>
+                <th>Suspicious Reports</th>
+                <th>Completions</th>
+                <th>Quiz Accuracy</th>
+                <th>Awareness Rating</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for code, stats in platform_stats.items() %}
+            <tr>
+                <td><strong>{{ stats.name }}</strong></td>
+                <td>{{ stats.views }}</td>
+                <td><span style="color: {% if stats.clicks > 0 %}#e74c3c{% else %}#aaa{% endif %}; font-weight: bold;">{{ stats.clicks }}</span></td>
+                <td>{{ stats.attachments }}</td>
+                <td><span style="color: #27ae60; font-weight: bold;">{{ stats.reports }}</span></td>
+                <td><span style="color: #7DF9FF; font-weight: bold;">{{ stats.completions }}</span></td>
+                <td>{{ stats.accuracy }}% ({{ stats.total_quizzes }} responses)</td>
+                <td>
+                    {% if stats.reports > stats.clicks and stats.accuracy >= 70 %}
+                        <span style="background: rgba(39, 174, 96, 0.2); color: #27ae60; padding: 3px 8px; border-radius: 4px; font-weight: bold;">HIGH RESILIENCE</span>
+                    {% elif stats.clicks > stats.reports %}
+                        <span style="background: rgba(231, 76, 60, 0.2); color: #e74c3c; padding: 3px 8px; border-radius: 4px; font-weight: bold;">VULNERABLE</span>
+                    {% else %}
+                        <span style="background: rgba(243, 156, 18, 0.2); color: #f39c12; padding: 3px 8px; border-radius: 4px; font-weight: bold;">MODERATE</span>
+                    {% endif %}
+                </td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

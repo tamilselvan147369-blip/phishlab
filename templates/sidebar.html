@@ -1,0 +1,13 @@
+<button class="sidebar-toggle" aria-expanded="false" aria-controls="sidebar">☰</button>
+<div class="sidebar collapsed" id="sidebar">
+    <h2>PhishLab</h2>
+    <ul>
+        <li><a href="{{ url_for('dashboard') }}" {% if request.endpoint == 'dashboard' %}class="active"{% endif %}>Dashboard</a></li>
+        <li><a href="{{ url_for('security_platform.operations_dashboard') }}" {% if request.endpoint and 'security_platform' in request.endpoint %}class="active"{% endif %}>🛡️ Security Platform</a></li>
+        <li><a href="{{ url_for('social_sim.generator_dashboard') }}" {% if request.endpoint and 'generator' in request.endpoint %}class="active"{% endif %}>⚡ Unified Generator</a></li>
+        <li><a href="{{ url_for('create_campaign') }}" {% if request.endpoint == 'create_campaign' %}class="active"{% endif %}>Create Campaign</a></li>
+        <li><a href="{{ url_for('campaign_history') }}" {% if request.endpoint == 'campaign_history' %}class="active"{% endif %}>Campaign History</a></li>
+        <li><a href="{{ url_for('social_sim.dashboard') }}" {% if request.endpoint and 'social_sim' in request.endpoint and 'generator' not in request.endpoint %}class="active"{% endif %}>Social Media Sim</a></li>
+        <li><a href="{{ url_for('realapp.exercise_history') }}" {% if request.endpoint and 'realapp' in request.endpoint %}class="active"{% endif %}>Real-App Exercises</a></li>
+    </ul>
+</div>

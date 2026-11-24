@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Demo Login - PhishLab</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body class="dark-bg">
+<div class="sidebar">
+    <h2>PhishLab</h2>
+    <ul>
+        <li><a href="{{ url_for('dashboard') }}">Dashboard</a></li>
+        <li><a href="{{ url_for('create_campaign') }}">Create Campaign</a></li>
+        <li><a href="#">Email Templates</a></li>
+        <li><a href="#">Simulation</a></li>
+        <li><a href="#">Campaign History</a></li>
+        <li><a href="#">Settings</a></li>
+    </ul>
+</div>
+<div class="main-content">
+    <h1>Demo Login Page</h1>
+    {% if submitted %}
+        <p class="info">Thank you for participating in the simulation. No credentials were collected.</p>
+        <p class="info">Educational note: This page demonstrates how phishing emails may direct victims to a login form. In a real attack, the attacker would capture the submitted credentials, which this demo intentionally does not do.</p>
+    {% else %}
+        <form method="post">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+            <div class="form-group">
+                <label for="username">Username</label>
+                <input type="text" id="username" name="username" class="form-control" placeholder="Enter your username" required>
+            </div>
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" name="password" class="form-control" placeholder="Enter your password" required>
+            </div>
+            <p class="disclaimer"><em>This is a simulated login page for educational purposes only. No data is stored.</em></p>
+            <button type="submit" class="btn btn-primary">Log In</button>
+        </form>
+    {% endif %}
+</div>
+</body>
+</html>

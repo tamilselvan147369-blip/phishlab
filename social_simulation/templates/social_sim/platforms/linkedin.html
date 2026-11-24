@@ -1,0 +1,101 @@
+{% extends "social_sim/platforms/base_platform.html" %}
+
+{% block platform_css %}
+    .li-app { display: flex; width: 100%; height: 100%; background: #000; color: #fff; }
+    .li-sidebar { width: 330px; border-right: 1px solid #283340; display: flex; flex-direction: column; background: #1b1f23; }
+    .li-header { padding: 14px 18px; border-bottom: 1px solid #283340; font-size: 1.1rem; font-weight: bold; color: #70b5f9; display: flex; justify-content: space-between; align-items: center; }
+    .li-chat-list { flex: 1; overflow-y: auto; list-style: none; padding: 0; margin: 0; }
+    .li-chat-item { display: flex; align-items: center; gap: 12px; padding: 14px 16px; text-decoration: none; color: inherit; cursor: pointer; border-bottom: 1px solid #283340; }
+    .li-chat-item:hover, .li-chat-item.active { background: #283340; }
+    .li-avatar { width: 44px; height: 44px; border-radius: 50%; background: #0a66c2; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; }
+    .li-main { flex: 1; display: flex; flex-direction: column; background: #0b1118; }
+    .li-main-header { padding: 14px 20px; border-bottom: 1px solid #283340; display: flex; align-items: center; justify-content: space-between; background: #1b1f23; }
+    .li-profile-card { background: #1d2226; border: 1px solid #38434f; border-radius: 8px; padding: 16px; margin: 15px 25px 0 25px; }
+    .li-messages { flex: 1; overflow-y: auto; padding: 25px; display: flex; flex-direction: column; gap: 14px; }
+    .li-bubble { max-width: 70%; padding: 12px 18px; border-radius: 8px; font-size: 0.95rem; line-height: 1.5; background: #1d2226; border: 1px solid #38434f; }
+    .li-bubble.incoming { align-self: flex-start; }
+    .li-bubble.outgoing { background: #0a66c2; align-self: flex-end; border-color: #0a66c2; }
+    .li-doc-box { background: #283340; border-left: 4px solid #70b5f9; padding: 12px 16px; border-radius: 6px; margin: 10px 0; display: flex; align-items: center; gap: 12px; cursor: pointer; }
+{% endblock %}
+
+{% block platform_content %}
+<div class="li-app">
+    <!-- LinkedIn Messaging Sidebar -->
+    <div class="li-sidebar">
+        <div class="li-header">
+            <span>LinkedIn Messaging</span>
+            <span style="background: #0a66c2; color: #fff; padding: 2px 6px; border-radius: 4px; font-size: 0.85rem; font-weight: bold;">in</span>
+        </div>
+        <ul class="li-chat-list">
+            {% for c in conversations %}
+            <a href="{{ url_for('social_sim.simulate_platform', platform=platform, sim_id=simulation.id, conv_id=c.id) }}" class="li-chat-item {% if active_conv and active_conv.id == c.id %}active{% endif %}">
+                <div class="li-avatar">{{ c.sender_avatar or '💼' }}</div>
+                <div style="flex: 1; overflow: hidden;">
+                    <div style="font-weight: 600; font-size: 0.95rem; white-space: nowrap; text-overflow: ellipsis; overflow: hidden;">{{ c.title }}</div>
+                    <div style="font-size: 0.78rem; color: #a0b2c6;">{{ c.subtitle }}</div>
+                </div>
+            </a>
+            {% endfor %}
+        </ul>
+    </div>
+
+    <!-- Active Professional Chat -->
+    <div class="li-main">
+        {% if active_conv %}
+        <div class="li-main-header">
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <div class="li-avatar">{{ active_conv.sender_avatar or '💼' }}</div>
+                <div>
+                    <div style="font-weight: bold; font-size: 1.05rem;">{{ active_conv.title }}</div>
+                    <div style="font-size: 0.8rem; color: #70b5f9;">{{ active_conv.subtitle }}</div>
+                </div>
+            </div>
+            <button onclick="reportSuspiciousMessage({{ active_conv.messages[0].id if active_conv.messages else 0 }}, {{ active_conv.id }})" class="btn btn-sm btn-danger">🛡️ Report InMail</button>
+        </div>
+
+        {% if active_conv.conversation_type == 'recruitment' %}
+        <div class="li-profile-card">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <div style="font-weight: bold; font-size: 0.95rem; color: #70b5f9;">👔 Executive Recruitment Opportunity</div>
+                    <div style="font-size: 0.82rem; color: #bbb;">Notice: Beware of unsolicited high-paying offers demanding document signatures or credential logins.</div>
+                </div>
+                <span style="background: rgba(112, 181, 249, 0.2); color: #70b5f9; padding: 4px 8px; border-radius: 4px; font-size: 0.78rem; font-weight: bold;">InMail</span>
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="li-messages">
+            {% for msg in active_conv.messages %}
+            <div class="li-bubble {% if msg.is_from_user %}outgoing{% else %}incoming{% endif %}">
+                <div style="font-size: 0.8rem; color: #70b5f9; font-weight: bold; margin-bottom: 4px;">{{ msg.sender_name }}</div>
+                <div>{{ msg.content }}</div>
+
+                {% if msg.simulated_link %}
+                <div style="background: #151a1e; padding: 10px 14px; border-radius: 6px; margin-top: 10px; border: 1px solid #38434f;">
+                    <div style="font-size: 0.72rem; color: #a0b2c6;">EXTERNAL PORTAL LINK:</div>
+                    <a href="#" onclick="handleLinkClick(event, '{{ msg.simulated_link }}', {{ msg.id }}, {{ active_conv.id }})" style="color: #70b5f9; font-weight: bold; text-decoration: underline;">{{ msg.simulated_link }}</a>
+                </div>
+                {% endif %}
+
+                {% if msg.attachment_name %}
+                <div class="li-doc-box" onclick="handleAttachmentClick(event, '{{ msg.attachment_name }}', {{ msg.id }}, {{ active_conv.id }})">
+                    <span style="font-size: 1.8rem;">📑</span>
+                    <div>
+                        <div style="font-weight: bold; color: #fff;">{{ msg.attachment_name }}</div>
+                        <div style="font-size: 0.75rem; color: #a0b2c6;">Click to inspect simulated employment document</div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+
+        <div style="padding: 14px 20px; background: #1b1f23; border-top: 1px solid #283340; display: flex; align-items: center; justify-content: space-between;">
+            <span style="color: #a0b2c6; font-size: 0.85rem;">🔒 Write a reply... (Interaction disabled for security demonstration)</span>
+            <button class="btn btn-sm btn-primary" style="opacity: 0.7;">Send</button>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

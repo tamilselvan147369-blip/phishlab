@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}Live Event Timeline - PhishLab{% endblock %}
+{% block content %}
+<div class="social-timeline">
+    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333; padding-bottom: 15px; margin-bottom: 25px;">
+        <div>
+            <h1 style="color: #7DF9FF; margin: 0 0 5px 0;">Live Simulation Event Timeline</h1>
+            <p style="color: #aaa; margin: 0;">Real-time interaction stream of participant actions across all 6 simulated social media channels.</p>
+        </div>
+        <div>
+            <a href="{{ url_for('social_sim.dashboard') }}" class="btn btn-secondary">Dashboard</a>
+        </div>
+    </div>
+
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Time (UTC)</th>
+                <th>Platform</th>
+                <th>Participant</th>
+                <th>Event Type</th>
+                <th>Details</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for evt in events %}
+            <tr>
+                <td>{{ evt.timestamp.strftime('%Y-%m-%d %H:%M:%S') if evt.timestamp else '' }}</td>
+                <td><span style="background: #222; padding: 2px 6px; border-radius: 4px; font-size: 0.85rem;">{{ evt.platform|title }}</span></td>
+                <td>{{ evt.participant.alias if evt.participant else 'Anonymous' }}</td>
+                <td>
+                    {% if evt.event_type == 'suspicious_reported' %}
+                        <span style="color: #27ae60; font-weight: bold;">🛡️ THREAT REPORTED</span>
+                    {% elif evt.event_type == 'link_clicked' %}
+                        <span style="color: #e74c3c; font-weight: bold;">⚠️ LINK CLICKED</span>
+                    {% elif evt.event_type == 'attachment_previewed' %}
+                        <span style="color: #f39c12; font-weight: bold;">📎 ATTACHMENT OPENED</span>
+                    {% elif evt.event_type == 'awareness_answered' %}
+                        <span style="color: #3498db; font-weight: bold;">📝 QUIZ SUBMITTED</span>
+                    {% else %}
+                        <span>{{ evt.event_type.replace('_', ' ')|title }}</span>
+                    {% endif %}
+                </td>
+                <td style="color: #ccc; font-size: 0.9rem;">{{ evt.details }}</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

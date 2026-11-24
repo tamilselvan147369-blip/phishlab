@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}{{ error_title }} - PhishLab Security Platform{% endblock %}
+{% block content %}
+<div style="max-width: 600px; margin: 60px auto; text-align: center; background: rgba(17, 27, 45, 0.9); padding: 40px; border-radius: 12px; border: 1px solid #e74c3c; box-shadow: 0 10px 30px rgba(0,0,0,0.6);">
+    <span style="font-size: 3.5rem;">🛑</span>
+    <h1 style="color: #e74c3c; margin: 15px 0 10px 0; font-size: 1.8rem;">{{ error_title }}</h1>
+    <p style="color: #E0E7FF; font-size: 1.05rem; line-height: 1.6; margin: 20px 0;">{{ error_msg }}</p>
+    <div style="background: rgba(0,0,0,0.3); padding: 12px; border-radius: 6px; font-size: 0.85rem; color: #8fa0bc; margin-bottom: 25px;">
+        Assessment Telemetry: All unauthorized, expired, or revoked testing attempts are recorded in the security audit log.
+    </div>
+    <a href="{{ url_for('dashboard') }}" class="btn btn-primary">Return to Main Dashboard</a>
+</div>
+{% endblock %}

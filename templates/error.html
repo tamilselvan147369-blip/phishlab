@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}Error {{ code }} - PhishLab{% endblock %}
+{% block content %}
+<div class="error-container" style="max-width: 600px; margin: 40px auto; text-align: center; padding: 30px; border: 1px solid #444; border-radius: 8px;">
+    <h1 style="color: #e74c3c;">HTTP {{ code }}</h1>
+    <p style="font-size: 1.1em; margin: 20px 0;">{{ message }}</p>
+    <div>
+        <a href="{{ url_for('dashboard') }}" class="btn btn-primary" style="padding: 8px 16px; text-decoration: none; background: #333; color: #fff; border-radius: 4px; display: inline-block;">Return to Dashboard</a>
+        {% if code == 403 and not session.get('is_admin') %}
+            <a href="{{ url_for('admin_login') }}" class="btn btn-primary" style="padding: 8px 16px; text-decoration: none; background: #00adb5; color: #fff; border-radius: 4px; margin-left: 10px; display: inline-block; font-weight: bold;">Log In as Admin</a>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Campaign Results - PhishLab</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body class="dark-bg">
+<div class="sidebar">
+    <h2>PhishLab</h2>
+    <ul>
+        <li><a href="{{ url_for('dashboard') }}">Dashboard</a></li>
+        <li><a href="{{ url_for('create_campaign') }}">Create Campaign</a></li>
+        <li><a href="#">Email Templates</a></li>
+        <li><a href="#">Simulation</a></li>
+        <li><a href="#">Campaign History</a></li>
+        <li><a href="#">Settings</a></li>
+    </ul>
+</div>
+<div class="main-content">
+    <h1>Results for "{{ campaign.name }}"</h1>
+    <ul class="result-list">
+        <li>Total Emails Sent: {{ counts.get('email_sent', 0) }}</li>
+        <li>Email Opens: {{ counts.get('email_opened', 0) }}</li>
+        <li>Demo Link Clicks: {{ counts.get('demo_link_clicked', 0) }}</li>
+        <li>Form Submissions: {{ counts.get('demo_form_submitted', 0) }}</li>
+    </ul>
+    <p>Campaign started at: {{ campaign.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</p>
+    <p><a href="{{ url_for('dashboard') }}" class="btn btn-primary">Back to Dashboard</a></p>
+</div>
+</body>
+</html>

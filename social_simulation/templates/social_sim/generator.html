@@ -1,0 +1,924 @@
+{% extends "base.html" %}
+{% block title %}UNIFIED SOCIAL MEDIA GENERATOR - PhishLab{% endblock %}
+
+{% block content %}
+<div class="unified-generator-wrapper">
+    <!-- Header Title Banner -->
+    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #22304a; padding-bottom: 18px; margin-bottom: 25px;">
+        <div>
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <span style="background: linear-gradient(135deg, #00adb5, #7DF9FF); color: #080D18; font-weight: 900; padding: 4px 10px; border-radius: 6px; font-size: 0.9rem;">PHISHLAB AI ENGINE</span>
+                <span style="color: #7DF9FF; font-size: 0.85rem; font-family: monospace;">PROVIDER: {{ provider_name }} {% if has_api_key %}(ONLINE){% else %}(LOCAL FALLBACK VERIFIED){% endif %}</span>
+            </div>
+            <h1 style="color: #FFFFFF; margin: 8px 0 4px 0; font-size: 2rem; font-weight: 800; letter-spacing: -0.5px;">UNIFIED SOCIAL MEDIA GENERATOR</h1>
+            <p style="color: #8fa0bc; margin: 0; font-size: 0.95rem;">Centralized generator for creating, customizing, previewing, and launching social engineering awareness simulations across six platforms.</p>
+        </div>
+        <div style="display: flex; gap: 10px;">
+            <a href="{{ url_for('social_sim.analytics') }}" class="btn btn-secondary">📊 Analytics</a>
+            <a href="{{ url_for('social_sim.export_csv') }}" class="btn btn-primary">📥 Export CSV</a>
+        </div>
+    </div>
+
+    <!-- Navigation Sub-Bar (11 Central Sections) -->
+    <div class="gen-nav-tabs" style="display: flex; gap: 8px; flex-wrap: wrap; background: #0f172a; padding: 8px 12px; border-radius: 8px; border: 1px solid #1e293b; margin-bottom: 25px;">
+        <button class="gen-tab-btn active" onclick="switchSection('overview')">1. Overview</button>
+        <button class="gen-tab-btn" onclick="switchSection('ai-generator')">2. AI Scenario Generator</button>
+        <button class="gen-tab-btn" onclick="switchSection('message-generator')">3. Message Generator</button>
+        <button class="gen-tab-btn" onclick="switchSection('platform-selector')">4. Platform Selector</button>
+        <button class="gen-tab-btn" onclick="switchSection('message-editor')">5. Message Editor</button>
+        <button class="gen-tab-btn" onclick="switchSection('simulation-preview')">6. Simulation Preview</button>
+        <button class="gen-tab-btn" onclick="switchSection('campaign-manager')">7. Campaign Manager</button>
+        <button class="gen-tab-btn" onclick="switchSection('participant-manager')">8. Participant Manager</button>
+        <button class="gen-tab-btn" onclick="switchSection('analytics')">9. Analytics</button>
+        <button class="gen-tab-btn" onclick="switchSection('reports')">10. Reports</button>
+        <button class="gen-tab-btn" onclick="switchSection('settings')">11. Settings</button>
+    </div>
+
+    <!-- ================================================================= -->
+    <!-- SECTION 1: OVERVIEW -->
+    <!-- ================================================================= -->
+    <div id="sec-overview" class="gen-section active">
+        <div class="cards" style="display: flex; gap: 15px; margin-bottom: 25px;">
+            <div class="card" style="background: rgba(17, 27, 45, 0.9); border: 1px solid #22304a; border-left: 4px solid #7DF9FF;">
+                <h3>Active Campaigns</h3>
+                <p style="color: #7DF9FF;">{{ total_campaigns }}</p>
+                <small style="color: #888;">Multi-platform exercises</small>
+            </div>
+            <div class="card" style="background: rgba(17, 27, 45, 0.9); border: 1px solid #22304a; border-left: 4px solid #27ae60;">
+                <h3>Generated Scenarios</h3>
+                <p style="color: #2ecc71;" id="overviewScenarioCount">{{ total_scenarios }}</p>
+                <small style="color: #888;">AI & template bank</small>
+            </div>
+            <div class="card" style="background: rgba(17, 27, 45, 0.9); border: 1px solid #22304a; border-left: 4px solid #f39c12;">
+                <h3>Enrolled Participants</h3>
+                <p style="color: #f39c12;">{{ total_participants }}</p>
+                <small style="color: #888;">Consent-gated trainees</small>
+            </div>
+            <div class="card" style="background: rgba(17, 27, 45, 0.9); border: 1px solid #22304a; border-left: 4px solid #9b59b6;">
+                <h3>Tracked Events</h3>
+                <p style="color: #af7ac5;">{{ total_events }}</p>
+                <small style="color: #888;">Views, clicks & reports</small>
+            </div>
+        </div>
+
+        <!-- 6 Platform Overview Cards -->
+        <h2 style="color: #7DF9FF; margin: 30px 0 15px 0;">Supported Simulation Platforms</h2>
+        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(310px, 1fr)); gap: 18px; margin-bottom: 35px;">
+            <!-- WhatsApp -->
+            <div class="platform-card" style="background: #111b21; border: 1px solid #222d34; border-radius: 10px; padding: 20px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <span style="font-size: 1.8rem;">📱</span>
+                        <h3 style="margin: 0; color: #25D366;">WhatsApp</h3>
+                    </div>
+                    <span style="background: rgba(37, 211, 102, 0.15); color: #25D366; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: bold;">READY</span>
+                </div>
+                <p style="color: #aebac1; font-size: 0.88rem; min-height: 42px;">Simulates 1-on-1 chats, corporate staff groups, read receipts, safe attachments, and urgent 2FA notices.</p>
+                <button onclick="quickLaunchGenerator('whatsapp')" class="btn btn-sm btn-primary" style="width: 100%; margin-top: 10px;">Generate WhatsApp Scenario →</button>
+            </div>
+
+            <!-- Instagram -->
+            <div class="platform-card" style="background: #121212; border: 1px solid #262626; border-radius: 10px; padding: 20px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <span style="font-size: 1.8rem;">📸</span>
+                        <h3 style="margin: 0; color: #E1306C;">Instagram</h3>
+                    </div>
+                    <span style="background: rgba(225, 48, 108, 0.15); color: #E1306C; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: bold;">READY</span>
+                </div>
+                <p style="color: #8e8e8e; font-size: 0.88rem; min-height: 42px;">Direct messages, copyright strike requests, fake influencer contracts, and profile inspection.</p>
+                <button onclick="quickLaunchGenerator('instagram')" class="btn btn-sm btn-primary" style="width: 100%; margin-top: 10px;">Generate Instagram Scenario →</button>
+            </div>
+
+            <!-- Facebook Messenger -->
+            <div class="platform-card" style="background: #18191a; border: 1px solid #3a3b3c; border-radius: 10px; padding: 20px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <span style="font-size: 1.8rem;">💬</span>
+                        <h3 style="margin: 0; color: #0084FF;">Facebook Messenger</h3>
+                    </div>
+                    <span style="background: rgba(0, 132, 255, 0.15); color: #0084FF; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: bold;">READY</span>
+                </div>
+                <p style="color: #b0b3b8; font-size: 0.88rem; min-height: 42px;">Urgent business page violation alerts, team chats, payroll curiosity links, and security escalation.</p>
+                <button onclick="quickLaunchGenerator('facebook_messenger')" class="btn btn-sm btn-primary" style="width: 100%; margin-top: 10px;">Generate Messenger Scenario →</button>
+            </div>
+
+            <!-- Telegram -->
+            <div class="platform-card" style="background: #0e1621; border: 1px solid #17212b; border-radius: 10px; padding: 20px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <span style="font-size: 1.8rem;">✈️</span>
+                        <h3 style="margin: 0; color: #2481CC;">Telegram</h3>
+                    </div>
+                    <span style="background: rgba(36, 129, 204, 0.15); color: #2481CC; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: bold;">READY</span>
+                </div>
+                <p style="color: #708499; font-size: 0.88rem; min-height: 42px;">Crypto giveaway broadcast channels, fake verification bots demanding SMS login codes, and file inspection.</p>
+                <button onclick="quickLaunchGenerator('telegram')" class="btn btn-sm btn-primary" style="width: 100%; margin-top: 10px;">Generate Telegram Scenario →</button>
+            </div>
+
+            <!-- X (Twitter) -->
+            <div class="platform-card" style="background: #000; border: 1px solid #2f3336; border-radius: 10px; padding: 20px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <span style="font-size: 1.8rem;">✖️</span>
+                        <h3 style="margin: 0; color: #1D9BF0;">X (Twitter)</h3>
+                    </div>
+                    <span style="background: rgba(29, 155, 240, 0.15); color: #1D9BF0; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: bold;">READY</span>
+                </div>
+                <p style="color: #71767b; font-size: 0.88rem; min-height: 42px;">Spoofed support handles, blue checkmark billing expiration fear tactics, and external link card previews.</p>
+                <button onclick="quickLaunchGenerator('x')" class="btn btn-sm btn-primary" style="width: 100%; margin-top: 10px;">Generate X Scenario →</button>
+            </div>
+
+            <!-- LinkedIn -->
+            <div class="platform-card" style="background: #1b1f23; border: 1px solid #283340; border-radius: 10px; padding: 20px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <span style="font-size: 1.8rem;">💼</span>
+                        <h3 style="margin: 0; color: #70b5f9;">LinkedIn</h3>
+                    </div>
+                    <span style="background: rgba(112, 181, 249, 0.15); color: #70b5f9; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: bold;">READY</span>
+                </div>
+                <p style="color: #a0b2c6; font-size: 0.88rem; min-height: 42px;">Executive headhunter outreach ($300k+ VP lure), NDA document inspection, and external portal links.</p>
+                <button onclick="quickLaunchGenerator('linkedin')" class="btn btn-sm btn-primary" style="width: 100%; margin-top: 10px;">Generate LinkedIn Scenario →</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================================================================= -->
+    <!-- SECTION 2: AI SCENARIO GENERATOR -->
+    <!-- ================================================================= -->
+    <div id="sec-ai-generator" class="gen-section">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 25px;">
+            <!-- Generation Parameters -->
+            <div style="background: #111b2d; border: 1px solid #22304a; border-radius: 10px; padding: 25px;">
+                <h2 style="color: #7DF9FF; margin-top: 0;">AI Scenario Configuration</h2>
+                <p style="color: #aaa; font-size: 0.9rem;">Configure parameters to generate a safe, educational training scenario.</p>
+
+                <form id="aiGenForm" onsubmit="handleGenerateScenario(event)">
+                    <div class="form-group mb-3">
+                        <label style="font-weight: bold; color: #E0E7FF; display: block; margin-bottom: 6px;">1. Scenario Category (11 Educational Domains):</label>
+                        <select id="genCategory" class="form-control" style="background: #080D18; color: #fff; border: 1px solid #444; width: 100%; padding: 10px; border-radius: 6px;">
+                            {% for key, val in categories.items() %}
+                            <option value="{{ key }}">{{ loop.index }}. {{ val }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+                        <div>
+                            <label style="font-weight: bold; color: #E0E7FF; display: block; margin-bottom: 6px;">2. Primary Platform:</label>
+                            <select id="genPlatform" class="form-control" style="background: #080D18; color: #fff; border: 1px solid #444; width: 100%; padding: 10px; border-radius: 6px;">
+                                {% for code, name in platforms.items() %}
+                                <option value="{{ code }}">{{ name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div>
+                            <label style="font-weight: bold; color: #E0E7FF; display: block; margin-bottom: 6px;">3. Language:</label>
+                            <select id="genLanguage" class="form-control" style="background: #080D18; color: #fff; border: 1px solid #444; width: 100%; padding: 10px; border-radius: 6px;">
+                                <option value="en">English (Global)</option>
+                                <option value="ta">Tamil (தமிழ்)</option>
+                                <option value="es">Spanish (Español)</option>
+                                <option value="de">German (Deutsch)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+                        <div>
+                            <label style="font-weight: bold; color: #E0E7FF; display: block; margin-bottom: 6px;">4. Message Tone:</label>
+                            <select id="genTone" class="form-control" style="background: #080D18; color: #fff; border: 1px solid #444; width: 100%; padding: 10px; border-radius: 6px;">
+                                <option value="Urgent">Urgent / Time-Critical</option>
+                                <option value="Authoritative">Authoritative / Compliance</option>
+                                <option value="Friendly">Friendly / Collaborative</option>
+                                <option value="Alarming">Alarming / Breach Alert</option>
+                                <option value="Professional">Professional / Recruitment</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label style="font-weight: bold; color: #E0E7FF; display: block; margin-bottom: 6px;">5. Complexity Level:</label>
+                            <select id="genComplexity" class="form-control" style="background: #080D18; color: #fff; border: 1px solid #444; width: 100%; padding: 10px; border-radius: 6px;">
+                                <option value="Beginner">Beginner (Obvious Red Flags)</option>
+                                <option value="Intermediate" selected>Intermediate (Subtle Lure)</option>
+                                <option value="Advanced">Advanced (Spear Phishing / Targeted)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group mb-3">
+                        <label style="font-weight: bold; color: #E0E7FF; display: block; margin-bottom: 6px;">6. Fictional Sender Name (Optional):</label>
+                        <input type="text" id="genSender" placeholder="Leave empty for auto-generated identity" class="form-control" style="background: #080D18; color: #fff; border: 1px solid #444; width: 100%; padding: 10px; border-radius: 6px;">
+                    </div>
+
+                    <div class="form-group mb-3">
+                        <label style="font-weight: bold; color: #E0E7FF; display: block; margin-bottom: 6px;">7. AI Provider Engine:</label>
+                        <select id="genProvider" class="form-control" style="background: #080D18; color: #fff; border: 1px solid #444; width: 100%; padding: 10px; border-radius: 6px;">
+                            <option value="local">Local Template Engine (Zero API Keys, Safe Fallback)</option>
+                            <option value="gemini">Google Gemini AI</option>
+                            <option value="openai">OpenAI (GPT-4o-mini)</option>
+                        </select>
+                    </div>
+
+                    <button type="submit" id="genSubmitBtn" class="btn btn-primary" style="width: 100%; padding: 14px; font-weight: bold; font-size: 1.05rem;">⚡ Generate Scenario Now</button>
+                </form>
+            </div>
+
+            <!-- Instant Generation Result Card -->
+            <div style="background: #111b2d; border: 1px solid #22304a; border-radius: 10px; padding: 25px; display: flex; flex-direction: column;">
+                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #22304a; padding-bottom: 12px; margin-bottom: 15px;">
+                    <h3 style="color: #7DF9FF; margin: 0;">Generated Scenario Output</h3>
+                    <span id="genProviderBadge" style="background: rgba(125, 249, 255, 0.15); color: #7DF9FF; padding: 3px 8px; border-radius: 4px; font-size: 0.8rem; font-family: monospace;">Awaiting generation</span>
+                </div>
+
+                <div id="genResultEmpty" style="flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #666; text-align: center; padding: 40px 20px;">
+                    <span style="font-size: 3rem; margin-bottom: 10px;">⚡</span>
+                    <p>Select category and parameters on the left, then click <strong>Generate Scenario Now</strong>.</p>
+                </div>
+
+                <div id="genResultContent" style="display: none; flex-direction: column; gap: 14px; flex: 1; overflow-y: auto;">
+                    <div>
+                        <strong style="color: #8fa0bc; font-size: 0.85rem;">SCENARIO TITLE:</strong>
+                        <div id="resTitle" style="font-size: 1.15rem; font-weight: bold; color: #fff;"></div>
+                    </div>
+                    <div>
+                        <strong style="color: #8fa0bc; font-size: 0.85rem;">FICTIONAL SENDER:</strong>
+                        <div id="resSender" style="color: #7DF9FF; font-weight: 600;"></div>
+                    </div>
+                    <div>
+                        <strong style="color: #8fa0bc; font-size: 0.85rem;">MESSAGE CONTENT:</strong>
+                        <div id="resContent" style="background: #080D18; padding: 14px; border-radius: 6px; border: 1px solid #333; line-height: 1.5; color: #e0e7ff; margin-top: 4px;"></div>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                        <div>
+                            <strong style="color: #8fa0bc; font-size: 0.85rem;">SIMULATED LINK:</strong>
+                            <div id="resLink" style="color: #3498db; word-break: break-all; font-size: 0.85rem;"></div>
+                        </div>
+                        <div>
+                            <strong style="color: #8fa0bc; font-size: 0.85rem;">SAFE ATTACHMENT:</strong>
+                            <div id="resAttachment" style="color: #f39c12; font-size: 0.85rem;"></div>
+                        </div>
+                    </div>
+                    <div>
+                        <strong style="color: #8fa0bc; font-size: 0.85rem;">WARNING INDICATORS (RED FLAGS):</strong>
+                        <pre id="resIndicators" style="background: rgba(231, 76, 60, 0.1); border-left: 3px solid #e74c3c; padding: 10px; font-family: inherit; font-size: 0.85rem; color: #ddd; margin: 4px 0; white-space: pre-wrap;"></pre>
+                    </div>
+
+                    <div style="display: flex; gap: 10px; margin-top: 15px;">
+                        <button onclick="transferToEditor()" class="btn btn-primary" style="flex: 1;">Edit in Message Editor ✏️</button>
+                        <button onclick="previewAllPlatforms()" class="btn btn-secondary" style="flex: 1;">Preview Across All 6 Platforms 👁️</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================================================================= -->
+    <!-- SECTION 3: MESSAGE GENERATOR -->
+    <!-- ================================================================= -->
+    <div id="sec-message-generator" class="gen-section">
+        <div style="background: #111b2d; border: 1px solid #22304a; border-radius: 10px; padding: 25px; margin-bottom: 25px;">
+            <h2 style="color: #7DF9FF; margin-top: 0;">Multi-Platform Message Batch Generator</h2>
+            <p style="color: #aaa;">Generate synchronized training messages tailored for each platform from a single educational objective.</p>
+
+            <div style="display: flex; gap: 12px; margin-bottom: 20px;">
+                <button onclick="quickBatchGenerate('account_security')" class="btn btn-sm btn-secondary">🔐 Account Security</button>
+                <button onclick="quickBatchGenerate('fake_recruitment')" class="btn btn-sm btn-secondary">💼 Fake Recruitment</button>
+                <button onclick="quickBatchGenerate('payment_notification')" class="btn btn-sm btn-secondary">💳 Invoice Settlement</button>
+                <button onclick="quickBatchGenerate('delivery_notification')" class="btn btn-sm btn-secondary">📦 Parcel Customs Fee</button>
+                <button onclick="quickBatchGenerate('prize_notification')" class="btn btn-sm btn-secondary">🎁 Tech Giveaway</button>
+                <button onclick="quickBatchGenerate('suspicious_attachment')" class="btn btn-sm btn-secondary">📑 Payroll Attachment</button>
+            </div>
+
+            <div id="batchResultsGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 18px;">
+                <p style="color: #666; grid-column: 1/-1;">Click one of the categories above to batch-generate platform-specific message variants.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================================================================= -->
+    <!-- SECTION 4: PLATFORM SELECTOR -->
+    <!-- ================================================================= -->
+    <div id="sec-platform-selector" class="gen-section">
+        <div style="background: #111b2d; border: 1px solid #22304a; border-radius: 10px; padding: 25px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <div>
+                    <h2 style="color: #7DF9FF; margin: 0 0 5px 0;">Platform Deployment Selector</h2>
+                    <p style="color: #aaa; margin: 0;">Choose which platforms receive the current simulation exercise.</p>
+                </div>
+                <div>
+                    <button onclick="selectAllPlatforms(true)" class="btn btn-sm btn-secondary">Select All 6</button>
+                    <button onclick="selectAllPlatforms(false)" class="btn btn-sm btn-secondary">Deselect All</button>
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 18px;">
+                {% for code, name in platforms.items() %}
+                <label style="background: #080D18; border: 2px solid #22304a; border-radius: 8px; padding: 18px; cursor: pointer; display: flex; gap: 14px; align-items: flex-start;">
+                    <input type="checkbox" name="selected_platforms" value="{{ code }}" checked style="margin-top: 4px; transform: scale(1.3);">
+                    <div>
+                        <strong style="font-size: 1.1rem; color: #fff;">{{ name }}</strong>
+                        <div style="font-size: 0.8rem; color: #8fa0bc; margin-top: 4px;">Code: <code>{{ code }}</code></div>
+                        <div style="font-size: 0.82rem; color: #2ecc71; margin-top: 6px;">✓ Simulation adapter active</div>
+                    </div>
+                </label>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- ================================================================= -->
+    <!-- SECTION 5: MESSAGE EDITOR -->
+    <!-- ================================================================= -->
+    <div id="sec-message-editor" class="gen-section">
+        <div style="background: #111b2d; border: 1px solid #22304a; border-radius: 10px; padding: 25px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #22304a; padding-bottom: 14px; margin-bottom: 20px;">
+                <div>
+                    <h2 style="color: #7DF9FF; margin: 0 0 4px 0;">Unified Message Editor</h2>
+                    <p style="color: #aaa; margin: 0; font-size: 0.9rem;">Fine-tune text, sender identities, and red flag warnings.</p>
+                </div>
+                <div style="display: flex; gap: 10px;">
+                    <button onclick="saveCurrentScenario(true)" class="btn btn-secondary">💾 Save as Reusable Template</button>
+                    <button onclick="createCampaignFromEditor()" class="btn btn-primary">🚀 Launch Live Campaign</button>
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 25px;">
+                <div>
+                    <div class="form-group mb-3">
+                        <label style="font-weight: bold; color: #E0E7FF; display: block; margin-bottom: 6px;">Scenario Title:</label>
+                        <input type="text" id="editTitle" class="form-control" style="background: #080D18; color: #fff; border: 1px solid #444; width: 100%; padding: 10px; border-radius: 6px;" value="Account Security Audit Notice">
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+                        <div>
+                            <label style="font-weight: bold; color: #E0E7FF; display: block; margin-bottom: 6px;">Fictional Sender Name:</label>
+                            <input type="text" id="editSender" class="form-control" style="background: #080D18; color: #fff; border: 1px solid #444; width: 100%; padding: 10px; border-radius: 6px;" value="Global IT Security Desk">
+                        </div>
+                        <div>
+                            <label style="font-weight: bold; color: #E0E7FF; display: block; margin-bottom: 6px;">Sender Handle / Subtitle:</label>
+                            <input type="text" id="editHandle" class="form-control" style="background: #080D18; color: #fff; border: 1px solid #444; width: 100%; padding: 10px; border-radius: 6px;" value="@security_verify_team">
+                        </div>
+                    </div>
+
+                    <div class="form-group mb-3">
+                        <label style="font-weight: bold; color: #E0E7FF; display: block; margin-bottom: 6px;">Message Content (Live Training Text):</label>
+                        <textarea id="editContent" rows="6" class="form-control" style="background: #080D18; color: #fff; border: 1px solid #444; width: 100%; padding: 10px; border-radius: 6px; font-size: 0.95rem; line-height: 1.4;">URGENT SECURITY NOTICE: Your corporate directory credentials require immediate verification. Multi-Factor Authentication token synchronization was detected as out of date. Update your authentication profile within 15 minutes to prevent account freeze: https://corporate-auth-sync.test/mfa-portal</textarea>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+                        <div>
+                            <label style="font-weight: bold; color: #E0E7FF; display: block; margin-bottom: 6px;">Simulated Link:</label>
+                            <input type="text" id="editLink" class="form-control" style="background: #080D18; color: #fff; border: 1px solid #444; width: 100%; padding: 10px; border-radius: 6px;" value="https://corporate-auth-sync.test/mfa-portal">
+                        </div>
+                        <div>
+                            <label style="font-weight: bold; color: #E0E7FF; display: block; margin-bottom: 6px;">Safe Attachment Name (Optional):</label>
+                            <input type="text" id="editAttachment" class="form-control" style="background: #080D18; color: #fff; border: 1px solid #444; width: 100%; padding: 10px; border-radius: 6px;" placeholder="e.g. MFA_Guide.pdf">
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <div class="form-group mb-3">
+                        <label style="font-weight: bold; color: #E0E7FF; display: block; margin-bottom: 6px;">Warning Indicators (Red Flags to Teach):</label>
+                        <textarea id="editIndicators" rows="4" class="form-control" style="background: #080D18; color: #fff; border: 1px solid #444; width: 100%; padding: 10px; border-radius: 6px;">1. Artificial 15-minute deadline pressure
+2. Unsolicited request for 2FA synchronization
+3. External non-SSO link (.test)
+4. Unofficial messaging channel</textarea>
+                    </div>
+
+                    <div class="form-group mb-3">
+                        <label style="font-weight: bold; color: #E0E7FF; display: block; margin-bottom: 6px;">Educational Objective:</label>
+                        <input type="text" id="editObjective" class="form-control" style="background: #080D18; color: #fff; border: 1px solid #444; width: 100%; padding: 10px; border-radius: 6px;" value="Teach employees to recognize urgency tactics and unauthorized re-authentication portals.">
+                    </div>
+
+                    <div class="form-group mb-3">
+                        <label style="font-weight: bold; color: #E0E7FF; display: block; margin-bottom: 6px;">Awareness Explanation (Provided after participant action):</label>
+                        <textarea id="editExplanation" rows="3" class="form-control" style="background: #080D18; color: #fff; border: 1px solid #444; width: 100%; padding: 10px; border-radius: 6px;">Legitimate IT teams never demand immediate credential updates over social messaging apps. Always verify via the internal helpdesk.</textarea>
+                    </div>
+
+                    <div style="display: flex; gap: 10px; margin-top: 20px;">
+                        <button onclick="saveCurrentScenario(false)" class="btn btn-secondary" style="flex: 1;">Save Scenario</button>
+                        <button onclick="previewEditedScenario()" class="btn btn-primary" style="flex: 1;">Update Preview 🔄</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================================================================= -->
+    <!-- SECTION 6: SIMULATION PREVIEW -->
+    <!-- ================================================================= -->
+    <div id="sec-simulation-preview" class="gen-section">
+        <div style="background: #111b2d; border: 1px solid #22304a; border-radius: 10px; padding: 25px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 15px;">
+                <div>
+                    <h2 style="color: #7DF9FF; margin: 0 0 5px 0;">Simulation Visual Preview</h2>
+                    <p style="color: #aaa; margin: 0;">Switch platforms to see how this scenario adapts to each unique UI layout.</p>
+                </div>
+
+                <!-- Platform Preview Tabs -->
+                <div style="display: flex; gap: 6px; background: #080D18; padding: 6px; border-radius: 8px; border: 1px solid #333;">
+                    <button class="preview-tab active" onclick="setPreviewPlatform('whatsapp')">WhatsApp</button>
+                    <button class="preview-tab" onclick="setPreviewPlatform('instagram')">Instagram</button>
+                    <button class="preview-tab" onclick="setPreviewPlatform('facebook_messenger')">Messenger</button>
+                    <button class="preview-tab" onclick="setPreviewPlatform('telegram')">Telegram</button>
+                    <button class="preview-tab" onclick="setPreviewPlatform('x')">X</button>
+                    <button class="preview-tab" onclick="setPreviewPlatform('linkedin')">LinkedIn</button>
+                </div>
+
+                <!-- Desktop / Mobile Frame Switcher -->
+                <div style="display: flex; gap: 6px;">
+                    <button id="btnFrameDesktop" class="btn btn-sm btn-primary" onclick="setPreviewFrame('desktop')">🖥️ Desktop</button>
+                    <button id="btnFrameMobile" class="btn btn-sm btn-secondary" onclick="setPreviewFrame('mobile')">📱 Mobile</button>
+                </div>
+            </div>
+
+            <!-- Preview Frame Container -->
+            <div id="previewWrapper" style="display: flex; justify-content: center; background: #040810; padding: 30px; border-radius: 8px; min-height: 480px; overflow-x: auto;">
+                <div id="previewFrame" style="width: 100%; max-width: 750px; background: #111b21; border-radius: 12px; border: 1px solid #333; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.7); transition: all 0.3s ease;">
+                    <div id="previewSnippetContainer">
+                        <!-- Populated by JavaScript -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================================================================= -->
+    <!-- SECTION 7: CAMPAIGN MANAGER -->
+    <!-- ================================================================= -->
+    <div id="sec-campaign-manager" class="gen-section">
+        <div style="background: #111b2d; border: 1px solid #22304a; border-radius: 10px; padding: 25px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <div>
+                    <h2 style="color: #7DF9FF; margin: 0 0 5px 0;">Simulation Campaign Manager</h2>
+                    <p style="color: #aaa; margin: 0;">Active and scheduled social awareness campaigns across all 6 channels.</p>
+                </div>
+                <a href="{{ url_for('social_sim.create_simulation') }}" class="btn btn-primary">+ Create New Campaign</a>
+            </div>
+
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Campaign Name</th>
+                        <th>Target Platforms</th>
+                        <th>Status</th>
+                        <th>Created</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for sim in simulations %}
+                    <tr>
+                        <td>{{ sim.id }}</td>
+                        <td><strong>{{ sim.name }}</strong></td>
+                        <td>
+                            {% for p in sim.get_platform_list() %}
+                            <span style="background: #080D18; border: 1px solid #333; padding: 2px 6px; border-radius: 4px; font-size: 0.8rem; margin-right: 4px;">{{ platforms[p] }}</span>
+                            {% endfor %}
+                        </td>
+                        <td>
+                            <span style="color: {% if sim.status == 'active' %}#2ecc71{% else %}#f39c12{% endif %}; font-weight: bold;">{{ sim.status|upper }}</span>
+                        </td>
+                        <td>{{ sim.created_at.strftime('%Y-%m-%d') if sim.created_at else '' }}</td>
+                        <td>
+                            <a href="{{ url_for('social_sim.manage_simulation', sim_id=sim.id) }}" class="btn btn-sm btn-secondary">Manage ↗</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- ================================================================= -->
+    <!-- SECTION 8: PARTICIPANT MANAGER -->
+    <!-- ================================================================= -->
+    <div id="sec-participant-manager" class="gen-section">
+        <div style="background: #111b2d; border: 1px solid #22304a; border-radius: 10px; padding: 25px;">
+            <h2 style="color: #7DF9FF; margin-top: 0;">Enrolled Participants & Consent Verification</h2>
+            <p style="color: #aaa;">All simulation participants are tracked pseudonymously with explicit consent logging.</p>
+
+            {% if participants %}
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Alias</th>
+                        <th>Participant UUID</th>
+                        <th>Campaign</th>
+                        <th>Consent Given</th>
+                        <th>Consent Timestamp</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for p in participants %}
+                    <tr>
+                        <td><strong>{{ p.alias }}</strong></td>
+                        <td><code>{{ p.participant_uuid }}</code></td>
+                        <td>{{ p.simulation.name }}</td>
+                        <td>
+                            {% if p.consent_given %}
+                            <span style="color: #2ecc71; font-weight: bold;">✓ Consented</span>
+                            {% else %}
+                            <span style="color: #e74c3c;">Pending</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ p.consent_timestamp.strftime('%Y-%m-%d %H:%M') if p.consent_timestamp else 'N/A' }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <p style="color: #888;">No participants have enrolled yet. Share participant portal links to begin training.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- ================================================================= -->
+    <!-- SECTION 9: ANALYTICS -->
+    <!-- ================================================================= -->
+    <div id="sec-analytics" class="gen-section">
+        <div style="background: #111b2d; border: 1px solid #22304a; border-radius: 10px; padding: 25px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h2 style="color: #7DF9FF; margin: 0;">Cross-Platform Resilience Analytics</h2>
+                <a href="{{ url_for('social_sim.analytics') }}" class="btn btn-primary">Open Dedicated Analytics Dashboard →</a>
+            </div>
+            <p style="color: #bbb;">Detailed vulnerability metrics, reporting speed, and awareness quiz evaluation across WhatsApp, Instagram, Messenger, Telegram, X, and LinkedIn are tracked in the central analytics engine.</p>
+        </div>
+    </div>
+
+    <!-- ================================================================= -->
+    <!-- SECTION 10: REPORTS -->
+    <!-- ================================================================= -->
+    <div id="sec-reports" class="gen-section">
+        <div style="background: #111b2d; border: 1px solid #22304a; border-radius: 10px; padding: 25px;">
+            <h2 style="color: #7DF9FF; margin-top: 0;">Simulation Reports & Audit Exports</h2>
+            <p style="color: #aaa;">Export verified simulation interaction records and compliance documentation.</p>
+
+            <div style="display: flex; gap: 15px; margin-top: 20px;">
+                <a href="{{ url_for('social_sim.export_csv') }}" class="btn btn-primary" style="padding: 14px 24px;">📥 Export Comprehensive CSV Report</a>
+                <a href="{{ url_for('social_sim.timeline') }}" class="btn btn-secondary" style="padding: 14px 24px;">🕒 View Real-Time Event Timeline</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================================================================= -->
+    <!-- SECTION 11: SETTINGS -->
+    <!-- ================================================================= -->
+    <div id="sec-settings" class="gen-section">
+        <div style="background: #111b2d; border: 1px solid #22304a; border-radius: 10px; padding: 25px;">
+            <h2 style="color: #7DF9FF; margin-top: 0;">Unified Generator Engine Settings</h2>
+            <p style="color: #aaa;">Configure AI providers, fallback behavior, and simulation constraints.</p>
+
+            <div style="margin-top: 20px; line-height: 2;">
+                <div><strong>Active Provider:</strong> <span style="color: #7DF9FF;">{{ provider_name }}</span></div>
+                <div><strong>API Key Status:</strong> {% if has_api_key %}<span style="color: #2ecc71;">✓ Configured in Environment</span>{% else %}<span style="color: #f39c12;">Using High-Reliability Local Template Fallback</span>{% endif %}</div>
+                <div><strong>Language Engine:</strong> English (en), Tamil (ta), Multilingual Template Adapter</div>
+                <div><strong>Zero-Exploit Safety Rule:</strong> <span style="color: #2ecc71;">Enforced (All links use safe internal .test domains, no live credentials collected)</span></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .gen-tab-btn {
+        background: transparent;
+        border: none;
+        color: #94a3b8;
+        padding: 8px 14px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-weight: 600;
+        font-size: 0.88rem;
+        transition: all 0.2s ease;
+    }
+    .gen-tab-btn:hover {
+        background: #1e293b;
+        color: #fff;
+    }
+    .gen-tab-btn.active {
+        background: #00adb5;
+        color: #080D18;
+        font-weight: 700;
+    }
+    .gen-section {
+        display: none;
+    }
+    .gen-section.active {
+        display: block;
+    }
+    .preview-tab {
+        background: transparent;
+        border: none;
+        color: #aaa;
+        padding: 6px 12px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 0.85rem;
+    }
+    .preview-tab.active {
+        background: #22304a;
+        color: #7DF9FF;
+        font-weight: bold;
+    }
+
+    /* Simulation Preview Styles */
+    .wa-preview-box, .ig-preview-box, .fb-preview-box, .tg-preview-box, .x-preview-box, .li-preview-box {
+        padding: 20px;
+        color: #fff;
+    }
+    .wa-top-bar, .ig-top-bar, .fb-top-bar, .tg-top-bar, .x-top-bar, .li-top-bar {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        border-bottom: 1px solid rgba(255,255,255,0.1);
+        padding-bottom: 12px;
+        margin-bottom: 15px;
+    }
+    .wa-bubble-msg {
+        background: #202c33;
+        border-radius: 8px;
+        padding: 12px 16px;
+        max-width: 85%;
+        border-top-left-radius: 0;
+    }
+    .ig-bubble-msg {
+        background: #262626;
+        border-radius: 18px;
+        padding: 12px 18px;
+        max-width: 85%;
+    }
+    .fb-bubble-msg {
+        background: #3a3b3c;
+        border-radius: 18px;
+        padding: 12px 18px;
+        max-width: 85%;
+    }
+    .tg-bubble-msg {
+        background: #182533;
+        border-radius: 10px;
+        padding: 12px 16px;
+        max-width: 85%;
+    }
+    .x-bubble-msg {
+        background: #2f3336;
+        border-radius: 18px;
+        padding: 14px 18px;
+        max-width: 85%;
+    }
+    .li-bubble-msg {
+        background: #1d2226;
+        border: 1px solid #38434f;
+        border-radius: 8px;
+        padding: 14px 18px;
+        max-width: 90%;
+    }
+    .wa-link-preview, .ig-link-preview, .fb-link-preview, .tg-link-preview, .x-card-preview, .li-link-preview {
+        background: rgba(0,0,0,0.3);
+        padding: 8px 12px;
+        border-radius: 6px;
+        margin: 8px 0;
+        border-left: 3px solid #7DF9FF;
+        word-break: break-all;
+    }
+    .wa-link-preview a, .ig-link-preview a, .fb-link-preview a, .tg-link-preview a, .x-card-preview a, .li-link-preview a {
+        color: #7DF9FF;
+        text-decoration: underline;
+        font-weight: bold;
+    }
+    .wa-att-preview, .ig-att-preview, .fb-att-preview, .tg-att-preview, .li-doc-preview {
+        background: rgba(0,0,0,0.3);
+        padding: 8px 12px;
+        border-radius: 6px;
+        margin: 8px 0;
+        border: 1px dashed #7DF9FF;
+    }
+    .ig-request-notice, .fb-notif-notice, .tg-banner, .x-notif-banner, .li-inmail-card {
+        background: rgba(255, 165, 0, 0.15);
+        border: 1px solid #f39c12;
+        color: #f39c12;
+        padding: 8px 12px;
+        border-radius: 6px;
+        font-size: 0.85rem;
+        margin-bottom: 12px;
+    }
+</style>
+
+<script>
+    const CSRF_TOKEN = "{{ csrf_token() }}";
+    let currentScenarioData = null;
+    let currentPreviewPlatform = 'whatsapp';
+
+    function switchSection(sectionId) {
+        document.querySelectorAll('.gen-section').forEach(s => s.classList.remove('active'));
+        document.querySelectorAll('.gen-tab-btn').forEach(b => b.classList.remove('active'));
+        
+        const sec = document.getElementById('sec-' + sectionId);
+        if(sec) sec.classList.add('active');
+
+        const btns = Array.from(document.querySelectorAll('.gen-tab-btn'));
+        const activeBtn = btns.find(b => b.getAttribute('onclick').includes(sectionId));
+        if(activeBtn) activeBtn.classList.add('active');
+
+        if(sectionId === 'simulation-preview') {
+            renderCurrentPreview();
+        }
+    }
+
+    function quickLaunchGenerator(platform) {
+        document.getElementById('genPlatform').value = platform;
+        switchSection('ai-generator');
+    }
+
+    function handleGenerateScenario(e) {
+        e.preventDefault();
+        const btn = document.getElementById('genSubmitBtn');
+        btn.disabled = true;
+        btn.innerText = '⚡ Generating Scenario...';
+
+        const payload = {
+            category: document.getElementById('genCategory').value,
+            platform: document.getElementById('genPlatform').value,
+            language: document.getElementById('genLanguage').value,
+            tone: document.getElementById('genTone').value,
+            complexity: document.getElementById('genComplexity').value,
+            sender_name: document.getElementById('genSender').value,
+            provider: document.getElementById('genProvider').value
+        };
+
+        fetch("{{ url_for('social_sim.api_generate_scenario') }}", {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF_TOKEN },
+            body: JSON.stringify(payload)
+        })
+        .then(res => res.json())
+        .then(data => {
+            btn.disabled = false;
+            btn.innerText = '⚡ Generate Scenario Now';
+            if(data.status === 'success') {
+                currentScenarioData = data.scenario;
+                displayGeneratedResult(data.scenario);
+            } else {
+                alert('Generation error: ' + (data.message || 'Unknown error'));
+            }
+        })
+        .catch(err => {
+            btn.disabled = false;
+            btn.innerText = '⚡ Generate Scenario Now';
+            alert('Request failed: ' + err);
+        });
+    }
+
+    function displayGeneratedResult(sc) {
+        document.getElementById('genResultEmpty').style.display = 'none';
+        document.getElementById('genResultContent').style.display = 'flex';
+        document.getElementById('genProviderBadge').innerText = sc.provider || 'AI Generated';
+        document.getElementById('resTitle').innerText = sc.title;
+        document.getElementById('resSender').innerText = sc.fictional_sender + ' (' + sc.sender_handle + ')';
+        document.getElementById('resContent').innerText = sc.message_content;
+        document.getElementById('resLink').innerText = sc.simulated_link || 'None';
+        document.getElementById('resAttachment').innerText = sc.simulated_attachment || 'None';
+        document.getElementById('resIndicators').innerText = sc.warning_indicators || 'Standard red flags apply';
+    }
+
+    function transferToEditor() {
+        if(!currentScenarioData) return;
+        document.getElementById('editTitle').value = currentScenarioData.title || '';
+        document.getElementById('editSender').value = currentScenarioData.fictional_sender || '';
+        document.getElementById('editHandle').value = currentScenarioData.sender_handle || '';
+        document.getElementById('editContent').value = currentScenarioData.message_content || '';
+        document.getElementById('editLink').value = currentScenarioData.simulated_link || '';
+        document.getElementById('editAttachment').value = currentScenarioData.simulated_attachment || '';
+        document.getElementById('editIndicators').value = currentScenarioData.warning_indicators || '';
+        document.getElementById('editObjective').value = currentScenarioData.educational_objective || '';
+        document.getElementById('editExplanation').value = currentScenarioData.awareness_explanation || '';
+        switchSection('message-editor');
+    }
+
+    function getEditorData() {
+        return {
+            title: document.getElementById('editTitle').value,
+            fictional_sender: document.getElementById('editSender').value,
+            sender_handle: document.getElementById('editHandle').value,
+            message_content: document.getElementById('editContent').value,
+            simulated_link: document.getElementById('editLink').value,
+            simulated_attachment: document.getElementById('editAttachment').value,
+            warning_indicators: document.getElementById('editIndicators').value,
+            educational_objective: document.getElementById('editObjective').value,
+            awareness_explanation: document.getElementById('editExplanation').value,
+            category: currentScenarioData ? currentScenarioData.category : 'account_security',
+            platform: currentPreviewPlatform,
+            language: currentScenarioData ? currentScenarioData.language : 'en'
+        };
+    }
+
+    function previewEditedScenario() {
+        currentScenarioData = getEditorData();
+        switchSection('simulation-preview');
+    }
+
+    function setPreviewPlatform(platform) {
+        currentPreviewPlatform = platform;
+        document.querySelectorAll('.preview-tab').forEach(t => {
+            t.classList.toggle('active', t.innerText.toLowerCase().includes(platform.split('_')[0]));
+        });
+        renderCurrentPreview();
+    }
+
+    function setPreviewFrame(frameType) {
+        const frame = document.getElementById('previewFrame');
+        const btnD = document.getElementById('btnFrameDesktop');
+        const btnM = document.getElementById('btnFrameMobile');
+        if(frameType === 'mobile') {
+            frame.style.maxWidth = '375px';
+            frame.style.borderRadius = '32px';
+            frame.style.border = '8px solid #222';
+            btnM.className = 'btn btn-sm btn-primary';
+            btnD.className = 'btn btn-sm btn-secondary';
+        } else {
+            frame.style.maxWidth = '750px';
+            frame.style.borderRadius = '12px';
+            frame.style.border = '1px solid #333';
+            btnD.className = 'btn btn-sm btn-primary';
+            btnM.className = 'btn btn-sm btn-secondary';
+        }
+    }
+
+    function renderCurrentPreview() {
+        const data = currentScenarioData || getEditorData();
+        data.platform = currentPreviewPlatform;
+
+        fetch("{{ url_for('social_sim.api_preview_all') }}", {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF_TOKEN },
+            body: JSON.stringify(data)
+        })
+        .then(res => res.json())
+        .then(resData => {
+            if(resData.previews && resData.previews[currentPreviewPlatform]) {
+                document.getElementById('previewSnippetContainer').innerHTML = resData.previews[currentPreviewPlatform].snippet_html;
+            }
+        });
+    }
+
+    function saveCurrentScenario(isTemplate) {
+        const payload = getEditorData();
+        payload.is_template = isTemplate;
+
+        fetch("{{ url_for('social_sim.api_save_scenario') }}", {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF_TOKEN },
+            body: JSON.stringify(payload)
+        })
+        .then(res => res.json())
+        .then(data => {
+            if(data.status === 'success') {
+                alert(data.message);
+                const countElem = document.getElementById('overviewScenarioCount');
+                if(countElem) countElem.innerText = parseInt(countElem.innerText || '0') + 1;
+            } else {
+                alert('Save failed: ' + data.message);
+            }
+        });
+    }
+
+    function createCampaignFromEditor() {
+        const payload = getEditorData();
+        const campaignName = prompt('Enter a name for this simulation campaign:', 'Campaign: ' + payload.title);
+        if(!campaignName) return;
+        payload.campaign_name = campaignName;
+
+        fetch("{{ url_for('social_sim.api_create_campaign') }}", {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF_TOKEN },
+            body: JSON.stringify(payload)
+        })
+        .then(res => res.json())
+        .then(data => {
+            if(data.status === 'success') {
+                alert(data.message);
+                window.location.href = data.manage_url;
+            } else {
+                alert('Campaign creation failed: ' + data.message);
+            }
+        });
+    }
+
+    function selectAllPlatforms(checked) {
+        document.querySelectorAll('input[name="selected_platforms"]').forEach(cb => cb.checked = checked);
+    }
+
+    function quickBatchGenerate(category) {
+        document.getElementById('genCategory').value = category;
+        handleGenerateScenario(new Event('submit'));
+        switchSection('ai-generator');
+    }
+
+    // Initialize with default template on page load
+    document.addEventListener('DOMContentLoaded', () => {
+        currentScenarioData = getEditorData();
+        renderCurrentPreview();
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block title %}Exercise Detail{% endblock %}
+{% block content %}
+<h2>Exercise: {{ exercise.exercise_name or 'Exercise ' ~ exercise.id }}</h2>
+
+<div class="exercise-info">
+    <ul>
+        <li><strong>ID:</strong> {{ exercise.id }}</li>
+        <li><strong>Platform:</strong> {{ exercise.platform|title }}</li>
+        <li><strong>Campaign:</strong> {{ exercise.campaign.name if exercise.campaign else 'N/A' }}</li>
+        <li><strong>Status:</strong> {{ exercise.status }}</li>
+        <li><strong>Created:</strong> {{ exercise.created_at }}</li>
+        <li><strong>Expires:</strong> {{ exercise.token_expires_at }}</li>
+        <li><strong>Revoked:</strong> {% if exercise.revoked_at %}Yes ({{ exercise.revoked_at }}){% else %}No{% endif %}</li>
+    </ul>
+</div>
+
+<h3>Participants ({{ participants|length }})</h3>
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>UUID</th>
+            <th>Joined</th>
+        </tr>
+    </thead>
+    <tbody>
+    {% for p in participants %}
+        <tr>
+            <td>{{ p.id }}</td>
+            <td>{{ p.participant_uuid }}</td>
+            <td>{{ p.created_at }}</td>
+        </tr>
+    {% endfor %}
+    </tbody>
+</table>
+
+<h3>Confirmations ({{ confirmations|length }})</h3>
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Participant</th>
+            <th>Event Type</th>
+            <th>Timestamp</th>
+        </tr>
+    </thead>
+    <tbody>
+    {% for c in confirmations %}
+        <tr>
+            <td>{{ c.id }}</td>
+            <td>{{ c.participant.participant_uuid if c.participant else 'N/A' }}</td>
+            <td>{{ c.event_type }}</td>
+            <td>{{ c.timestamp }}</td>
+        </tr>
+    {% endfor %}
+    </tbody>
+</table>
+
+<a href="{{ url_for('realapp.exercise_history') }}" class="btn btn-secondary">Back to History</a>
+{% if not exercise.revoked_at %}
+<form method="post" action="{{ url_for('realapp.revoke_exercise', exercise_id=exercise.id) }}" style="display:inline;">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+    <button class="btn btn-warning" type="submit">Revoke Token</button>
+</form>
+{% endif %}
+{% endblock %}

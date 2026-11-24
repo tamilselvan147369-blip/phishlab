@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>PhishLab Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="dark-bg">
+<script>
+    const statsData = {{ stats|tojson }};
+</script>
+{% include 'sidebar.html' %}
+<div class="main-content">
+    <h1>Dashboard</h1>
+    <div class="cards">
+        <div class="card">
+            <h3>Total Campaigns</h3>
+            <p>{{ total_campaigns }}</p>
+        </div>
+        <div class="card">
+            <h3>Emails Sent</h3>
+            <p>{{ stats|sum(attribute='emails_sent') }}</p>
+        </div>
+        <div class="card">
+            <h3>Email Opens</h3>
+            <p>{{ stats|sum(attribute='opens') }}</p>
+        </div>
+        <div class="card">
+            <h3>Link Clicks</h3>
+            <p>{{ stats|sum(attribute='clicks') }}</p>
+        </div>
+        <div class="card">
+            <h3>Form Submissions</h3>
+            <p>{{ stats|sum(attribute='submits') }}</p>
+        </div>
+    </div>
+    <canvas id="activityChart" width="400" height="200"></canvas>
+</div>
+<script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+<script src="{{ url_for('static', filename='js/sidebar.js') }}"></script>
+</body>
+</html>

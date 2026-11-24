@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Create Campaign - PhishLab</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body class="dark-bg">
+{% include 'sidebar.html' %}
+<div class="main-content">
+    <h1>Create Campaign</h1>
+    <form method="post">
+        {{ form.hidden_tag() }}
+        <div class="form-group">
+            {{ form.name.label }}
+            {{ form.name(class="form-control") }}
+        </div>
+        <div class="form-group">
+            {{ form.scenario.label }}
+            {{ form.scenario(class="form-control") }}
+        </div>
+        <div class="form-group">
+            {{ form.subject.label }}
+            {{ form.subject(class="form-control") }}
+        </div>
+        <div class="form-group">
+            {{ form.sender_name.label }}
+            {{ form.sender_name(class="form-control") }}
+        </div>
+        <div class="form-group">
+            {{ form.recipient.label }}
+            {{ form.recipient(class="form-control") }}
+        </div>
+        <div class="form-group">
+            {{ form.template.label }}
+            {{ form.template(class="form-control", rows="10") }}
+        </div>
+        <div class="form-group">
+            {{ form.description.label }}
+            {{ form.description(class="form-control", rows="4") }}
+        </div>
+        <div class="form-group">
+            {{ form.submit(class="btn btn-primary") }}
+        </div>
+    </form>
+</div>
+<script>
+// Form loading state – works for both <input type="submit"> and <button type="submit">
+document.querySelector('form').addEventListener('submit', function(e) {
+    const btn = this.querySelector('input[type="submit"], button[type="submit"]');
+    if (btn) {
+        // Preserve original label/text
+        const original = btn.dataset.original || (btn.tagName.toLowerCase() === 'input' ? btn.value : btn.textContent);
+        btn.dataset.original = original;
+        btn.disabled = true;
+        if (btn.tagName.toLowerCase() === 'input') {
+            btn.value = 'Submitting…';
+        } else {
+            btn.textContent = 'Submitting…';
+        }
+    }
+});
+</script>
+<script src="{{ url_for('static', filename='js/sidebar.js') }}"></script>
+</body>

@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Email Preview - PhishLab</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body class="dark-bg">
+<div class="sidebar">
+    <h2>PhishLab</h2>
+    <ul>
+        <li><a href="{{ url_for('dashboard') }}">Dashboard</a></li>
+        <li><a href="{{ url_for('create_campaign') }}">Create Campaign</a></li>
+        <li><a href="#">Email Templates</a></li>
+        <li><a href="#">Simulation</a></li>
+        <li><a href="#">Campaign History</a></li>
+        <li><a href="#">Settings</a></li>
+    </ul>
+</div>
+<div class="main-content">
+    <h1>Email Preview</h1>
+    <div class="email-content">
+        {{ campaign.template|safe }}
+    </div>
+    <p><a href="{{ url_for('demo_login', cid=campaign.id) }}" class="btn btn-primary">Open Demo Login Page</a></p>
+</div>
+</body>
+</html>

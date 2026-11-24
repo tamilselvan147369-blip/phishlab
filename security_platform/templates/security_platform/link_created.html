@@ -1,0 +1,139 @@
+{% extends "base.html" %}
+{% block title %}Testing Link Generated — PhishLab{% endblock %}
+
+{% block content %}
+<div style="max-width: 900px; margin: 0 auto; color: #E0E7FF;">
+
+    <div style="margin-bottom: 25px; border-bottom: 1px solid #233554; padding-bottom: 15px;">
+        <a href="{{ url_for('security_platform.operations_dashboard') }}" style="color: #7DF9FF; text-decoration: none; font-size: 0.9rem;">← Back to Dashboard</a>
+        <h1 style="color: #7DF9FF; margin: 10px 0 0; font-size: 1.8rem;">
+            ✅ Security Testing Link Ready
+        </h1>
+        <p style="color: #8892B0; margin: 4px 0 0;">
+            Real testing link generated for Campaign <strong>{{ campaign.name }}</strong> (ID #{{ campaign.id }}).
+        </p>
+    </div>
+
+    <!-- Link & QR Display Card -->
+    <div style="background: rgba(17, 27, 45, 0.9); border: 1px solid #233554; border-radius: 8px; padding: 25px; margin-bottom: 25px;">
+        <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 25px; align-items: center;">
+            <div>
+                <label style="display: block; font-size: 0.85rem; color: #8892B0; text-transform: uppercase; margin-bottom: 6px;">Live Testing URL</label>
+                <div style="display: flex; gap: 8px;">
+                    <input type="text" id="testing-url-input" value="{{ testing_url }}" readonly style="flex: 1; padding: 10px 14px; background: #0a101c; border: 1px solid #7DF9FF; color: #64ffda; border-radius: 4px; font-family: monospace; font-size: 0.95rem;">
+                    <button onclick="copyTestingUrl()" class="btn btn-primary" id="copy-btn" style="padding: 10px 16px; background: #7DF9FF; color: #080D18; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">
+                        📋 Copy Link
+                    </button>
+                </div>
+
+                {% if '127.0.0.1' in testing_url or 'localhost' in testing_url %}
+                <div style="margin-top: 12px; background: rgba(243, 156, 18, 0.15); border-left: 3px solid #f39c12; padding: 8px 12px; border-radius: 4px; font-size: 0.8rem; color: #f39c12;">
+                    ⚠️ <strong>Local Loopback Scope:</strong> This testing link is bound to localhost (<code>{{ testing_url.split('/test/')[0] }}</code>). For access from a separate authorized mobile or network device, access PhishLab via your host's LAN IP address.
+                </div>
+                {% endif %}
+
+                <div style="margin-top: 18px; font-size: 0.85rem; color: #ccd6f6; line-height: 1.6;">
+                    <div><strong>Assigned Participant:</strong> {{ participant.name }} ({{ participant.email }})</div>
+                    <div><strong>Max Allowed Usages:</strong> {{ link.max_usages }} interactions</div>
+                    <div><strong>Expires At:</strong> {{ link.expires_at.strftime('%Y-%m-%d %H:%M UTC') }}</div>
+                    <div><strong>Security Token Hash:</strong> <span style="font-family: monospace; color: #8892B0;">{{ link.token_hash[:20] }}...</span></div>
+                </div>
+
+                <div style="margin-top: 20px; display: flex; gap: 10px;">
+                    <a href="{{ testing_url }}" target="_blank" class="btn btn-primary btn-sm" style="background: #2ecc71; color: #fff; padding: 8px 16px; text-decoration: none; border-radius: 4px;">
+                        🚀 Open Link in New Tab
+                    </a>
+                    <a href="{{ url_for('security_platform.operations_dashboard') }}" class="btn btn-secondary btn-sm" style="padding: 8px 16px; text-decoration: none; border-radius: 4px;">
+                        Return to Dashboard
+                    </a>
+                </div>
+            </div>
+
+            <!-- Vector QR Code SVG -->
+            <div style="text-align: center; background: #0a101c; padding: 15px; border-radius: 8px; border: 1px solid #233554;">
+                <div style="color: #8892B0; font-size: 0.8rem; margin-bottom: 8px;">Mobile Scanner QR Code</div>
+                <div style="display: inline-block; background: white; padding: 8px; border-radius: 6px;">
+                    {{ qr_svg|safe }}
+                </div>
+                <div style="color: #6c7d9c; font-size: 0.75rem; margin-top: 6px;">Pure SVG Vector</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Message Distribution Templates -->
+    <div style="background: rgba(17, 27, 45, 0.85); border: 1px solid #233554; border-radius: 8px; padding: 25px;">
+        <h3 style="color: #7DF9FF; margin-top: 0; font-size: 1.2rem;">
+            📱 Platform Distribution Dispatch Cards
+        </h3>
+        <p style="color: #8892B0; font-size: 0.85rem; margin-top: 4px;">
+            Copy pre-formatted authorized security assessment invitations or dispatch directly via web intent:
+        </p>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 15px; margin-top: 15px;">
+            <!-- WhatsApp -->
+            <div style="background: #0d1525; border: 1px solid #25D366; border-radius: 6px; padding: 14px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <span style="color: #25D366; font-weight: bold;">WhatsApp</span>
+                    <a href="https://wa.me/?text={{ (testing_url)|urlencode }}" target="_blank" class="btn btn-sm" style="background: #25D366; color: #fff; padding: 3px 8px; font-size: 0.75rem; text-decoration: none;">Launch Web</a>
+                </div>
+                <p style="font-size: 0.8rem; color: #ccd6f6; margin: 0 0 10px;">Security assessment invitation with direct link.</p>
+                <button onclick="copyText('Security Alert: Please complete the authorized security awareness verification at: {{ testing_url }}')" class="btn btn-secondary btn-sm" style="width: 100%; font-size: 0.75rem;">Copy WhatsApp Message</button>
+            </div>
+
+            <!-- Telegram -->
+            <div style="background: #0d1525; border: 1px solid #0088cc; border-radius: 6px; padding: 14px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <span style="color: #0088cc; font-weight: bold;">Telegram</span>
+                    <a href="https://t.me/share/url?url={{ testing_url|urlencode }}&text={{ 'Security Assessment'|urlencode }}" target="_blank" class="btn btn-sm" style="background: #0088cc; color: #fff; padding: 3px 8px; font-size: 0.75rem; text-decoration: none;">Launch Web</a>
+                </div>
+                <p style="font-size: 0.8rem; color: #ccd6f6; margin: 0 0 10px;">Telegram share intent with embedded token.</p>
+                <button onclick="copyText('Cybersecurity Verification: Review your account security status at: {{ testing_url }}')" class="btn btn-secondary btn-sm" style="width: 100%; font-size: 0.75rem;">Copy Telegram Message</button>
+            </div>
+
+            <!-- LinkedIn -->
+            <div style="background: #0d1525; border: 1px solid #0A66C2; border-radius: 6px; padding: 14px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <span style="color: #0A66C2; font-weight: bold;">LinkedIn</span>
+                    <a href="https://www.linkedin.com/sharing/share-offsite/?url={{ testing_url|urlencode }}" target="_blank" class="btn btn-sm" style="background: #0A66C2; color: #fff; padding: 3px 8px; font-size: 0.75rem; text-decoration: none;">Launch Web</a>
+                </div>
+                <p style="font-size: 0.8rem; color: #ccd6f6; margin: 0 0 10px;">Professional opportunity scenario message.</p>
+                <button onclick="copyText('Executive Security Review: Complete your verification at: {{ testing_url }}')" class="btn btn-secondary btn-sm" style="width: 100%; font-size: 0.75rem;">Copy LinkedIn Message</button>
+            </div>
+
+            <!-- X (Twitter) -->
+            <div style="background: #0d1525; border: 1px solid #1DA1F2; border-radius: 6px; padding: 14px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <span style="color: #1DA1F2; font-weight: bold;">X (Twitter)</span>
+                    <a href="https://twitter.com/intent/tweet?text={{ ('Security Assessment Verification: ' ~ testing_url)|urlencode }}" target="_blank" class="btn btn-sm" style="background: #1DA1F2; color: #fff; padding: 3px 8px; font-size: 0.75rem; text-decoration: none;">Launch Web</a>
+                </div>
+                <p style="font-size: 0.8rem; color: #ccd6f6; margin: 0 0 10px;">Direct tweet dispatch intent.</p>
+                <button onclick="copyText('Security Alert: Verify assessment status at: {{ testing_url }}')" class="btn btn-secondary btn-sm" style="width: 100%; font-size: 0.75rem;">Copy X Message</button>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script>
+function copyTestingUrl() {
+    var input = document.getElementById('testing-url-input');
+    input.select();
+    input.setSelectionRange(0, 99999);
+    navigator.clipboard.writeText(input.value).then(function() {
+        var btn = document.getElementById('copy-btn');
+        btn.textContent = '✓ Copied!';
+        btn.style.background = '#2ecc71';
+        setTimeout(function() {
+            btn.textContent = '📋 Copy Link';
+            btn.style.background = '#7DF9FF';
+        }, 2500);
+    });
+}
+
+function copyText(txt) {
+    navigator.clipboard.writeText(txt).then(function() {
+        alert('Message copied to clipboard!');
+    });
+}
+</script>
+{% endblock %}

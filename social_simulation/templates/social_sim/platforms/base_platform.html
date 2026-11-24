@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}{{ platform_name }} Simulation - PhishLab{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        /* Simulation Platform Master Layout */
+        body.sim-body {
+            margin: 0;
+            padding: 0;
+            background: #0b111e;
+            color: #fff;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Prominent Training Disclaimer Banner */
+        .training-banner {
+            background: linear-gradient(90deg, #b71c1c, #d32f2f);
+            color: #ffffff;
+            font-size: 0.88rem;
+            font-weight: 600;
+            padding: 8px 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid #ff5252;
+            z-index: 1000;
+        }
+
+        .sim-container {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* Modal Styles */
+        .sim-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.75);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+            backdrop-filter: blur(4px);
+        }
+        .sim-modal-content {
+            background: #111b2d;
+            border: 1px solid #333;
+            border-radius: 12px;
+            max-width: 550px;
+            width: 90%;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+            position: relative;
+            color: #e0e7ff;
+        }
+        .modal-close-btn {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: none;
+            border: none;
+            color: #aaa;
+            font-size: 1.4rem;
+            cursor: pointer;
+        }
+
+        /* Responsive Simulation Layouts */
+        @media (max-width: 768px) {
+            body.sim-body {
+                overflow-y: auto;
+                height: auto;
+            }
+            .training-banner {
+                flex-direction: column;
+                gap: 8px;
+                text-align: center;
+            }
+            .sim-container {
+                height: auto;
+                min-height: calc(100vh - 80px);
+            }
+            .wa-app, .ig-app, .fb-app, .tg-app, .x-app, .li-app {
+                flex-direction: column !important;
+                height: auto !important;
+                min-height: 100% !important;
+            }
+            .wa-sidebar, .ig-sidebar, .fb-sidebar, .tg-sidebar, .x-sidebar, .li-sidebar {
+                width: 100% !important;
+                max-height: 220px !important;
+                border-right: none !important;
+                border-bottom: 1px solid rgba(255,255,255,0.15) !important;
+                flex-shrink: 0;
+            }
+            .wa-chat-main, .ig-main, .fb-main, .tg-main, .x-main, .li-main {
+                width: 100% !important;
+                flex: 1 1 auto !important;
+                min-height: 420px !important;
+            }
+            .wa-messages-area, .ig-messages, .fb-messages, .tg-messages, .x-messages, .li-messages {
+                padding: 15px 10px !important;
+            }
+            .wa-bubble, .ig-bubble, .fb-bubble, .tg-bubble, .x-bubble, .li-bubble {
+                max-width: 90% !important;
+            }
+        }
+
+        {% block platform_css %}{% endblock %}
+    </style>
+</head>
+<body class="sim-body">
+    <!-- Required Training Banner -->
+    <header class="training-banner">
+        <span>⚠️ <strong>PHISHLAB TRAINING LAB:</strong> {{ platform_name }} Simulation Environment (No Real Credentials or Data)</span>
+        <div>
+            <button onclick="openQuizModal()" class="btn btn-sm" style="background: #ffeb3b; color: #000; font-weight: bold; margin-right: 10px;">📝 Awareness Quiz</button>
+            <a href="{{ url_for('social_sim.dashboard') }}" style="color: #fff; text-decoration: underline; font-size: 0.85rem;">Exit to Dashboard</a>
+        </div>
+    </header>
+
+    <!-- Main Platform Experience -->
+    <main class="sim-container">
+        {% block platform_content %}{% endblock %}
+    </main>
+
+    <!-- Educational Feedback Modal -->
+    <div id="feedbackModal" class="sim-modal">
+        <div class="sim-modal-content">
+            <button class="modal-close-btn" onclick="closeFeedbackModal()">&times;</button>
+            <h3 id="feedbackTitle" style="margin-top: 0;"></h3>
+            <p id="feedbackMessage" style="font-size: 1.05rem; line-height: 1.5;"></p>
+            <div id="feedbackIndicators" style="background: rgba(0,0,0,0.3); padding: 12px; border-left: 4px solid #7DF9FF; margin-top: 15px; font-size: 0.9rem; color: #ddd;"></div>
+            <div style="text-align: right; margin-top: 20px;">
+                <button onclick="closeFeedbackModal()" class="btn btn-primary">Understood</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Awareness Quiz Modal -->
+    <div id="quizModal" class="sim-modal">
+        <div class="sim-modal-content" style="max-width: 600px;">
+            <button class="modal-close-btn" onclick="closeQuizModal()">&times;</button>
+            <h3 style="color: #7DF9FF; margin-top: 0;">{{ platform_name }} Security Awareness Checkpoint</h3>
+            <p id="quizQuestion" style="font-weight: 600; font-size: 1.05rem;">{{ quiz.question }}</p>
+            <form id="quizForm" onsubmit="handleQuizSubmit(event)">
+                <div style="margin: 15px 0;">
+                    {% for opt in quiz.options %}
+                    <label style="display: block; padding: 10px 14px; margin-bottom: 8px; background: rgba(255,255,255,0.05); border: 1px solid #333; border-radius: 6px; cursor: pointer;">
+                        <input type="radio" name="quiz_option" value="{{ opt }}" required>
+                        <span style="margin-left: 8px;">{{ opt }}</span>
+                    </label>
+                    {% endfor %}
+                </div>
+                <div id="quizResult" style="display: none; padding: 12px; border-radius: 6px; margin: 15px 0;"></div>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 20px;">
+                    <span id="quizScoreMsg" style="font-size: 0.9rem; color: #aaa;"></span>
+                    <button type="submit" id="quizSubmitBtn" class="btn btn-primary">Submit Answer</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const SIMULATION_ID = {{ simulation.id }};
+        const CURRENT_PLATFORM = "{{ platform }}";
+        const CSRF_TOKEN = "{{ csrf_token() }}";
+
+        function showFeedback(title, message, indicators) {
+            document.getElementById('feedbackTitle').innerText = title;
+            document.getElementById('feedbackMessage').innerText = message;
+            document.getElementById('feedbackIndicators').innerText = indicators || '';
+            document.getElementById('feedbackModal').style.display = 'flex';
+        }
+
+        function closeFeedbackModal() {
+            document.getElementById('feedbackModal').style.display = 'none';
+        }
+
+        function openQuizModal() {
+            document.getElementById('quizModal').style.display = 'flex';
+        }
+
+        function closeQuizModal() {
+            document.getElementById('quizModal').style.display = 'none';
+        }
+
+        function handleLinkClick(e, linkUrl, msgId, convId) {
+            e.preventDefault();
+            fetch("{{ url_for('social_sim.track_event') }}", {
+                method: "POST",
+                headers: { "Content-Type": "application/json", "X-CSRFToken": CSRF_TOKEN },
+                body: JSON.stringify({
+                    simulation_id: SIMULATION_ID,
+                    platform: CURRENT_PLATFORM,
+                    event_type: "link_clicked",
+                    conversation_id: convId,
+                    message_id: msgId,
+                    details: "Clicked simulated link: " + linkUrl
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if(data.feedback) {
+                    showFeedback(data.feedback.title, data.feedback.message, data.feedback.indicators);
+                }
+            });
+        }
+
+        function handleAttachmentClick(e, attName, msgId, convId) {
+            e.preventDefault();
+            fetch("{{ url_for('social_sim.track_event') }}", {
+                method: "POST",
+                headers: { "Content-Type": "application/json", "X-CSRFToken": CSRF_TOKEN },
+                body: JSON.stringify({
+                    simulation_id: SIMULATION_ID,
+                    platform: CURRENT_PLATFORM,
+                    event_type: "attachment_previewed",
+                    conversation_id: convId,
+                    message_id: msgId,
+                    details: "Opened simulated attachment: " + attName
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if(data.feedback) {
+                    showFeedback(data.feedback.title, data.feedback.message, data.feedback.indicators);
+                }
+            });
+        }
+
+        function reportSuspiciousMessage(msgId, convId, btn) {
+            const buttonElem = btn || (window.event && window.event.target ? window.event.target.closest('button') : null);
+            if(buttonElem) {
+                buttonElem.disabled = true;
+                buttonElem.innerText = "Reported 🛡️";
+                buttonElem.style.opacity = "0.75";
+            }
+            fetch("{{ url_for('social_sim.track_event') }}", {
+                method: "POST",
+                headers: { "Content-Type": "application/json", "X-CSRFToken": CSRF_TOKEN },
+                body: JSON.stringify({
+                    simulation_id: SIMULATION_ID,
+                    platform: CURRENT_PLATFORM,
+                    event_type: "suspicious_reported",
+                    conversation_id: convId,
+                    message_id: msgId,
+                    details: "Participant identified and reported suspicious communication"
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if(data.feedback) {
+                    showFeedback(data.feedback.title, data.feedback.message, data.feedback.indicators);
+                }
+            });
+        }
+
+        function handleQuizSubmit(e) {
+            e.preventDefault();
+            const selected = document.querySelector('input[name="quiz_option"]:checked');
+            if(!selected) return;
+
+            fetch("{{ url_for('social_sim.submit_quiz') }}", {
+                method: "POST",
+                headers: { "Content-Type": "application/json", "X-CSRFToken": CSRF_TOKEN },
+                body: JSON.stringify({
+                    simulation_id: SIMULATION_ID,
+                    platform: CURRENT_PLATFORM,
+                    selected_option: selected.value
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+                const resDiv = document.getElementById('quizResult');
+                resDiv.style.display = 'block';
+                if(data.is_correct) {
+                    resDiv.style.background = 'rgba(39, 174, 96, 0.2)';
+                    resDiv.style.border = '1px solid #27ae60';
+                    resDiv.style.color = '#2ecc71';
+                    resDiv.innerHTML = '<strong>✅ Correct!</strong> ' + data.explanation;
+                } else {
+                    resDiv.style.background = 'rgba(231, 76, 60, 0.2)';
+                    resDiv.style.border = '1px solid #e74c3c';
+                    resDiv.style.color = '#e74c3c';
+                    resDiv.innerHTML = '<strong>❌ Incorrect.</strong> ' + data.explanation;
+                }
+                document.getElementById('quizSubmitBtn').disabled = true;
+                document.getElementById('quizScoreMsg').innerText = 'Response recorded in simulation analytics.';
+            });
+        }
+    </script>
+</body>
+</html>
