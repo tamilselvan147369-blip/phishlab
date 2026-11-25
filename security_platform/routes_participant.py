@@ -140,7 +140,7 @@ def init_participant_routes(bp):
         )
         db.session.add(consent_record)
 
-        # Record event
+        # Record consent event
         evt = TestingEvent(
             campaign_id=link.campaign_id,
             session_id=ts.id,
@@ -154,8 +154,24 @@ def init_participant_routes(bp):
             timestamp=utcnow_naive()
         )
         db.session.add(evt)
+
+        # Record assessment started event as assessment modules unlock upon consent
+        start_evt = TestingEvent(
+            campaign_id=link.campaign_id,
+            session_id=ts.id,
+            participant_id=link.participant_id,
+            link_id=link.id,
+            event_type='assessment_started',
+            browser_family=ts.browser_family,
+            os_family=ts.os_family,
+            device_category=ts.device_category,
+            details=f"Security awareness assessment started by {link.participant.alias if link.participant else 'Authorized Trainee'}.",
+            timestamp=utcnow_naive()
+        )
+        db.session.add(start_evt)
         db.session.commit()
         broadcast_event('consent_submitted', link.campaign_id, evt.details, ts.browser_family, ts.os_family, ts.device_category)
+        broadcast_event('assessment_started', link.campaign_id, start_evt.details, ts.browser_family, ts.os_family, ts.device_category)
 
         return jsonify({'status': 'success', 'message': 'Consent successfully recorded.'})
 
@@ -277,6 +293,11 @@ def init_participant_routes(bp):
         db.session.commit()
         broadcast_event('file_uploaded', link.campaign_id, evt.details, ts.browser_family, ts.os_family, ts.device_category)
 
+        notice = (
+            "Technical Finding: This demonstration proves that browser security sandboxes strictly "
+            "prohibit web pages from silently reading device files. A website can NEVER inspect your photos or "
+            "documents unless you explicitly open an OS file dialog, choose a file, and click upload."
+        )
         return jsonify({
             'status': 'success',
             'upload_id': upload_entry.id,
@@ -285,11 +306,8 @@ def init_participant_routes(bp):
             'sha256': sha256,
             'file_hash_sha256': sha256,
             'file_size_bytes': file_size,
-            'technical_explanation': (
-                "Technical Finding: This demonstration proves that browser security sandboxes strictly "
-                "prohibit web pages from silently reading device files. A website can NEVER inspect your photos or "
-                "documents unless you explicitly open an OS file dialog, choose a file, and click upload."
-            )
+            'security_notice': notice,
+            'technical_explanation': notice
         })
 
     @bp.route('/test/<raw_token>/complete', methods=['POST'])

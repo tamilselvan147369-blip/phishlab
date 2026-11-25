@@ -27,5 +27,10 @@ access_log_format = '%(h)s %(l)s %(u)s %(t)s "%(r)s" %(s)s %(b)s "%(f)s" "%(a)s"
 # Process naming
 proc_name = "phishlab-gunicorn"
 
+# Preload app and recycle workers periodically to prevent memory bloat
+preload_app = True
+max_requests = int(os.getenv("GUNICORN_MAX_REQUESTS", "1000"))
+max_requests_jitter = 50
+
 # Graceful restart
 graceful_timeout = 30

@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Authorized Security Assessment — PhishLab</title>
     <style>
         body {
@@ -97,7 +98,7 @@
             <span class="badge badge-warning">🛡️ Authorized Security Assessment</span>
             <h1 style="color: #7DF9FF; margin: 8px 0 4px; font-size: 1.6rem;">PhishLab Security Verification</h1>
             <p style="color: #8892B0; margin: 0; font-size: 0.9rem;">
-                Campaign: <strong>{{ campaign.name }}</strong> | Target: <strong>{{ participant.name }}</strong>
+                Campaign: <strong>{{ campaign.name }}</strong> | Target: <strong>{{ participant.alias if participant else 'Authorized Participant' }}</strong>
             </p>
         </div>
         <div>
@@ -235,6 +236,8 @@
 
 <script>
 var rawToken = "{{ raw_token }}";
+var csrfMeta = document.querySelector('meta[name="csrf-token"]');
+var csrfToken = csrfMeta ? csrfMeta.getAttribute('content') : '';
 
 // Checkbox enables consent button
 var consentBox = document.getElementById('consent-checkbox');
@@ -256,7 +259,10 @@ function showAlert(msg, isSuccess) {
 function submitConsent() {
     fetch('/test/' + rawToken + '/consent', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' }
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrfToken
+        }
     })
     .then(r => r.json())
     .then(data => {
@@ -275,7 +281,10 @@ function reportThreat() {
     if (!confirm('Report this assessment communication as a suspected social-engineering threat?')) return;
     fetch('/test/' + rawToken + '/report', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' }
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrfToken
+        }
     })
     .then(r => r.json())
     .then(data => {
@@ -302,15 +311,19 @@ function uploadDemoFile(e) {
 
     fetch('/test/' + rawToken + '/file-demonstration', {
         method: 'POST',
+        headers: {
+            'X-CSRFToken': csrfToken
+        },
         body: formData
     })
     .then(r => r.json())
     .then(data => {
         if (data.status === 'success') {
+            var notice = data.security_notice || data.technical_explanation || '';
             resultDiv.innerHTML = '<div style="color: #2ecc71; margin-top: 6px;">' +
                 '✓ <strong>Sandbox File Received:</strong> ' + data.filename + ' (' + (data.file_size_bytes/1024).toFixed(1) + ' KB)<br>' +
                 '<strong>SHA-256:</strong> <span style="font-family: monospace; color: #64ffda;">' + data.file_hash_sha256 + '</span><br>' +
-                '<span style="color: #8892B0; font-size: 0.8rem;">' + data.security_notice + '</span>' +
+                '<span style="color: #8892B0; font-size: 0.8rem;">' + notice + '</span>' +
                 '</div>';
         } else {
             resultDiv.innerHTML = '<span style="color: #e74c3c;">Upload rejected: ' + (data.message || 'Error') + '</span>';
@@ -324,7 +337,10 @@ function uploadDemoFile(e) {
 function completeAssessment() {
     fetch('/test/' + rawToken + '/complete', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' }
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrfToken
+        }
     })
     .then(r => r.json())
     .then(data => {

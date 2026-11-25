@@ -136,15 +136,15 @@
                     <label style="display: block; font-size: 0.85rem; color: #ccd6f6; margin-bottom: 4px;">Scenario Template *</label>
                     <select name="scenario_key" required class="form-control" style="background: #0d1525; border: 1px solid #233554; color: #E0E7FF; padding: 8px; width: 100%; border-radius: 4px;">
                         {% for key, tmpl in templates.items() %}
-                            <option value="{{ key }}">{{ tmpl.title }} ({{ tmpl.platform|title }})</option>
+                            <option value="{{ key }}">{{ tmpl.title }} ({{ key|replace('_', ' ')|title }})</option>
                         {% endfor %}
                     </select>
                 </div>
 
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px;">
                     <div>
-                        <label style="display: block; font-size: 0.85rem; color: #ccd6f6; margin-bottom: 4px;">Participant Name</label>
-                        <input type="text" name="participant_name" placeholder="e.g., Alex Carter" class="form-control" style="background: #0d1525; border: 1px solid #233554; color: #E0E7FF; padding: 8px; width: 100%; border-radius: 4px;">
+                        <label style="display: block; font-size: 0.85rem; color: #ccd6f6; margin-bottom: 4px;">Participant Alias</label>
+                        <input type="text" name="participant_alias" placeholder="e.g., Alex Carter" class="form-control" style="background: #0d1525; border: 1px solid #233554; color: #E0E7FF; padding: 8px; width: 100%; border-radius: 4px;">
                     </div>
                     <div>
                         <label style="display: block; font-size: 0.85rem; color: #ccd6f6; margin-bottom: 4px;">Participant Email</label>
@@ -154,12 +154,12 @@
 
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px;">
                     <div>
-                        <label style="display: block; font-size: 0.85rem; color: #ccd6f6; margin-bottom: 4px;">Max Allowed Opens</label>
-                        <input type="number" name="max_usages" value="5" min="1" max="100" class="form-control" style="background: #0d1525; border: 1px solid #233554; color: #E0E7FF; padding: 8px; width: 100%; border-radius: 4px;">
+                        <label style="display: block; font-size: 0.85rem; color: #ccd6f6; margin-bottom: 4px;">Max Allowed Opens (0 = Unlimited)</label>
+                        <input type="number" name="max_uses" value="5" min="0" max="1000" class="form-control" style="background: #0d1525; border: 1px solid #233554; color: #E0E7FF; padding: 8px; width: 100%; border-radius: 4px;">
                     </div>
                     <div>
                         <label style="display: block; font-size: 0.85rem; color: #ccd6f6; margin-bottom: 4px;">Expiration (Hours)</label>
-                        <input type="number" name="ttl_hours" value="24" min="1" max="168" class="form-control" style="background: #0d1525; border: 1px solid #233554; color: #E0E7FF; padding: 8px; width: 100%; border-radius: 4px;">
+                        <input type="number" name="ttl_hours" value="48" min="1" max="168" class="form-control" style="background: #0d1525; border: 1px solid #233554; color: #E0E7FF; padding: 8px; width: 100%; border-radius: 4px;">
                     </div>
                 </div>
 
@@ -211,7 +211,7 @@
                             {% endif %}
                         </td>
                         <td style="padding: 10px; color: #ccd6f6;">{{ c.links|length }}</td>
-                        <td style="padding: 10px; color: #FFCC00; font-weight: bold;">{{ c.sessions|length }}</td>
+                        <td style="padding: 10px; color: #FFCC00; font-weight: bold;">{{ session_counts.get(c.id, 0) }}</td>
                         <td style="padding: 10px; color: #8892B0; font-size: 0.8rem;">{{ c.created_at.strftime('%Y-%m-%d') }}</td>
                         <td style="padding: 10px; text-align: right;">
                             <form method="POST" action="{{ url_for('security_platform.campaign_status', cid=c.id) }}" style="display: inline;">
@@ -231,6 +231,94 @@
                 </tbody>
             </table>
         </div>
+    </div>
+
+    <!-- Device & Browser Telemetry Breakdown -->
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 30px;">
+        <div style="background: rgba(17, 27, 45, 0.85); border: 1px solid #233554; border-radius: 8px; padding: 20px;">
+            <h3 style="color: #7DF9FF; margin: 0 0 12px; font-size: 1.05rem;">🌐 Browser Breakdown</h3>
+            {% if browser_stats %}
+                {% for browser, cnt in browser_stats.items() %}
+                <div style="display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #1a2a44; font-size: 0.85rem;">
+                    <span style="color: #ccd6f6;">{{ browser or 'Unknown' }}</span>
+                    <strong style="color: #7DF9FF;">{{ cnt }}</strong>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div style="color: #8892B0; font-size: 0.85rem;">No browser telemetry recorded yet.</div>
+            {% endif %}
+        </div>
+        <div style="background: rgba(17, 27, 45, 0.85); border: 1px solid #233554; border-radius: 8px; padding: 20px;">
+            <h3 style="color: #7DF9FF; margin: 0 0 12px; font-size: 1.05rem;">📱 Device Category Breakdown</h3>
+            {% if device_stats %}
+                {% for dev, cnt in device_stats.items() %}
+                <div style="display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #1a2a44; font-size: 0.85rem;">
+                    <span style="color: #ccd6f6;">{{ dev or 'Unknown' }}</span>
+                    <strong style="color: #64ffda;">{{ cnt }}</strong>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div style="color: #8892B0; font-size: 0.85rem;">No device telemetry recorded yet.</div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Active & Recent Testing Links -->
+    <div style="background: rgba(17, 27, 45, 0.85); border: 1px solid #233554; border-radius: 8px; padding: 20px; margin-bottom: 30px;">
+        <h3 style="color: #7DF9FF; margin: 0 0 15px; font-size: 1.15rem;">
+            🔗 Generated Testing Links
+        </h3>
+        {% if recent_links %}
+        <div style="overflow-x: auto;">
+            <table class="table" style="width: 100%; border-collapse: collapse; font-size: 0.85rem;">
+                <thead>
+                    <tr style="border-bottom: 1px solid #233554; color: #7DF9FF; text-align: left;">
+                        <th style="padding: 8px;">ID</th>
+                        <th style="padding: 8px;">Campaign</th>
+                        <th style="padding: 8px;">Participant</th>
+                        <th style="padding: 8px;">Uses</th>
+                        <th style="padding: 8px;">Status</th>
+                        <th style="padding: 8px;">Expires</th>
+                        <th style="padding: 8px; text-align: right;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for lnk in recent_links %}
+                    <tr style="border-bottom: 1px solid #1a2a44;">
+                        <td style="padding: 8px; color: #8892B0;">#{{ lnk.id }}</td>
+                        <td style="padding: 8px; color: #ccd6f6;">{{ lnk.campaign.name if lnk.campaign else 'N/A' }}</td>
+                        <td style="padding: 8px; color: #8892B0;">{{ lnk.participant.alias if lnk.participant else 'Open Link' }}</td>
+                        <td style="padding: 8px; color: #FFCC00;">{{ lnk.use_count }} / {{ '∞' if lnk.max_uses == 0 else lnk.max_uses }}</td>
+                        <td style="padding: 8px;">
+                            {% if lnk.is_revoked %}
+                                <span style="color: #e74c3c; font-weight: bold;">Revoked</span>
+                            {% elif lnk.is_expired %}
+                                <span style="color: #f39c12; font-weight: bold;">Expired</span>
+                            {% else %}
+                                <span style="color: #2ecc71; font-weight: bold;">Active</span>
+                            {% endif %}
+                        </td>
+                        <td style="padding: 8px; color: #8892B0; font-size: 0.8rem;">{{ lnk.expires_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                        <td style="padding: 8px; text-align: right;">
+                            {% if not lnk.is_revoked %}
+                            <form method="POST" action="{{ url_for('security_platform.link_revoke', lid=lnk.id) }}" style="display: inline;">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <button type="submit" class="btn btn-danger btn-sm" style="padding: 3px 8px; font-size: 0.75rem;">Revoke</button>
+                            </form>
+                            {% else %}
+                            <span style="color: #6c7d9c; font-size: 0.75rem;">Blocked (410)</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+            <div style="color: #8892B0; text-align: center; padding: 20px; font-size: 0.9rem;">
+                No testing links generated yet.
+            </div>
+        {% endif %}
     </div>
 
     <!-- Controlled Safe File Demonstration Log -->

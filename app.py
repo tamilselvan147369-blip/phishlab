@@ -458,6 +458,16 @@ def create_app(test_config=None):
     app.config['MAIL_PORT'] = int(os.getenv('MAIL_PORT', '1025'))
     app.config['MAIL_SENDER'] = os.getenv('MAIL_SENDER', 'phishlab@example.test')
     app.config['ALLOWED_RECIPIENT_DOMAIN'] = os.getenv('ALLOWED_RECIPIENT_DOMAIN', 'example.test')
+    app.config['BASE_URL'] = os.getenv('BASE_URL', '').strip().rstrip('/')
+
+    # Ensure persistent upload folder exists
+    upload_dir = os.getenv('UPLOAD_FOLDER')
+    if not upload_dir:
+        upload_dir = '/tmp/demonstration_uploads' if is_vercel else os.path.join('database', 'demonstration_uploads')
+    try:
+        os.makedirs(upload_dir, exist_ok=True)
+    except OSError:
+        pass
 
     # Session cookie hardening
     app.config['SESSION_COOKIE_HTTPONLY'] = True

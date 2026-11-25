@@ -53,6 +53,12 @@ def init_admin_routes(bp):
             )
             recent_events = TestingEvent.query.order_by(TestingEvent.id.desc()).limit(20).all()
             recent_uploads = DemonstrationUpload.query.filter_by(deleted_at=None).order_by(DemonstrationUpload.id.desc()).limit(10).all()
+            recent_links = TestingLink.query.order_by(TestingLink.id.desc()).limit(20).all()
+            session_counts = dict(
+                db.session.query(TestingSession.campaign_id, func.count(TestingSession.id))
+                .group_by(TestingSession.campaign_id)
+                .all()
+            )
         except Exception:
             # Tables may not exist yet on a fresh serverless cold-start — auto-create and retry
             db.create_all()
@@ -78,11 +84,18 @@ def init_admin_routes(bp):
                 )
                 recent_events = TestingEvent.query.order_by(TestingEvent.id.desc()).limit(20).all()
                 recent_uploads = DemonstrationUpload.query.filter_by(deleted_at=None).order_by(DemonstrationUpload.id.desc()).limit(10).all()
+                recent_links = TestingLink.query.order_by(TestingLink.id.desc()).limit(20).all()
+                session_counts = dict(
+                    db.session.query(TestingSession.campaign_id, func.count(TestingSession.id))
+                    .group_by(TestingSession.campaign_id)
+                    .all()
+                )
             except Exception:
                 total_links = total_sessions = consents_count = completed_count = 0
                 reported_count = file_demo_count = 0
                 browser_stats = device_stats = {}
-                recent_events = recent_uploads = []
+                recent_events = recent_uploads = recent_links = []
+                session_counts = {}
 
         return render_template(
             'security_platform/dashboard.html',
@@ -99,6 +112,8 @@ def init_admin_routes(bp):
             device_stats=device_stats,
             recent_events=recent_events,
             recent_uploads=recent_uploads,
+            recent_links=recent_links,
+            session_counts=session_counts,
             templates=DEFAULT_SCENARIO_TEMPLATES
         )
 
@@ -161,11 +176,14 @@ def init_admin_routes(bp):
     @admin_required
     def link_generate():
         cid = request.form.get('campaign_id', type=int)
-        alias = request.form.get('participant_alias', '').strip()
+        alias = (request.form.get('participant_alias') or request.form.get('participant_name') or '').strip()
         email = request.form.get('participant_email', '').strip()
         dept = request.form.get('participant_department', 'General').strip()
-        ttl_hours = int(request.form.get('ttl_hours', 48))
-        max_uses = int(request.form.get('max_uses', 0))
+        scenario_key = request.form.get('scenario_key', 'whatsapp').strip()
+        ttl_hours = request.form.get('ttl_hours', type=int) or 48
+        max_uses = request.form.get('max_uses', type=int)
+        if max_uses is None:
+            max_uses = request.form.get('max_usages', type=int) or 0
 
         camp = db.session.get(TestingCampaign, cid)
         if not camp:
@@ -193,9 +211,19 @@ def init_admin_routes(bp):
         db.session.add(link)
         db.session.commit()
 
-        base_url = request.host_url.rstrip('/')
+        configured_base = (current_app.config.get('BASE_URL') or os.getenv('BASE_URL', '')).strip().rstrip('/')
+        base_url = configured_base or request.host_url.rstrip('/')
+        if current_app.config.get('IS_PRODUCTION') and base_url.startswith('http://'):
+            base_url = 'https://' + base_url[len('http://'):]
+
         testing_url = f"{base_url}/test/{raw_token}"
         qr_svg = generate_qr_svg(testing_url)
+
+        platforms_order = ['whatsapp', 'telegram', 'linkedin', 'x', 'instagram', 'facebook_messenger']
+        distributions = {
+            plat: build_distribution_payload(plat, alias or 'Authorized Participant', testing_url)
+            for plat in platforms_order
+        }
 
         db.session.add(SecurityAuditLog(action='link_generated', target=f"Link #{link.id}", details=f"Campaign #{camp.id}, Token: {raw_token[:8]}..."))
         db.session.commit()
@@ -208,7 +236,9 @@ def init_admin_routes(bp):
             link=link,
             raw_token=raw_token,
             testing_url=testing_url,
-            qr_svg=qr_svg
+            qr_svg=qr_svg,
+            distributions=distributions,
+            scenario_key=scenario_key
         )
 
     @bp.route('/security/link/<int:lid>/revoke', methods=['POST'])
