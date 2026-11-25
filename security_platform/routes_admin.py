@@ -22,6 +22,7 @@ from .models import (
 from .tokens import create_testing_link, generate_qr_svg
 from .events import broadcaster
 from .distribution import DEFAULT_SCENARIO_TEMPLATES, build_distribution_payload
+from .storage import delete_demonstration_file
 
 
 def init_admin_routes(bp):
@@ -303,6 +304,7 @@ def init_admin_routes(bp):
         def event_generator():
             q = broadcaster.subscribe()
             start_ts = time.monotonic()
+            stream_last_id = request.headers.get('Last-Event-ID', '$')
             try:
                 yield "retry: 3000\n"
                 yield ": connected to real-time event pipeline\n\n"
@@ -310,12 +312,22 @@ def init_admin_routes(bp):
                     if is_serverless and (time.monotonic() - start_ts) >= 25:
                         # Close gracefully before serverless timeout; EventSource reconnects automatically
                         break
-                    try:
-                        evt = q.get(timeout=15)
-                        data_str = json.dumps(evt)
-                        yield f"data: {data_str}\n\n"
-                    except Exception:
-                        yield ": keep-alive\n\n"
+                    if broadcaster._upstash:
+                        new_id, stream_events = broadcaster.read_stream_since(stream_last_id, count=20)
+                        if stream_events:
+                            stream_last_id = new_id
+                            for evt in stream_events:
+                                yield f"id: {stream_last_id}\ndata: {json.dumps(evt)}\n\n"
+                        else:
+                            yield ": keep-alive\n\n"
+                        time.sleep(2)
+                    else:
+                        try:
+                            evt = q.get(timeout=15)
+                            data_str = json.dumps(evt)
+                            yield f"data: {data_str}\n\n"
+                        except Exception:
+                            yield ": keep-alive\n\n"
             finally:
                 broadcaster.unsubscribe(q)
 
@@ -334,15 +346,9 @@ def init_admin_routes(bp):
         upload = db.session.get(DemonstrationUpload, fid)
         if not upload:
             abort(404)
-        
-        upload_dir = os.getenv('UPLOAD_FOLDER', os.path.join('database', 'demonstration_uploads'))
-        file_path = os.path.join(upload_dir, upload.stored_filename)
-        if os.path.exists(file_path):
-            try:
-                os.remove(file_path)
-            except Exception:
-                pass
-        
+
+        delete_demonstration_file(upload.stored_filename)
+
         upload.deleted_at = utcnow_naive()
         db.session.commit()
         db.session.add(SecurityAuditLog(action='demonstration_file_deleted', target=f"Upload #{upload.id}", details=f"File: {upload.original_filename}"))

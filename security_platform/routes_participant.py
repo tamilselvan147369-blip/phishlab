@@ -20,14 +20,10 @@ from .models import (
 from .tokens import get_link_by_raw_token
 from .telemetry import parse_user_agent, anonymize_ip, sanitize_referrer
 from .events import broadcast_event
+from .storage import store_demonstration_file, get_upload_folder
 
 # Upload configuration
-UPLOAD_FOLDER = os.getenv('UPLOAD_FOLDER')
-if not UPLOAD_FOLDER:
-    if os.getenv('VERCEL') == '1' or 'VERCEL' in os.environ:
-        UPLOAD_FOLDER = os.path.join('/tmp', 'demonstration_uploads')
-    else:
-        UPLOAD_FOLDER = os.path.join('database', 'demonstration_uploads')
+UPLOAD_FOLDER = get_upload_folder()
 
 ALLOWED_EXTENSIONS = {'txt', 'pdf', 'png', 'jpg', 'jpeg', 'docx'}
 MAX_FILE_SIZE_BYTES = 2 * 1024 * 1024  # 2 Megabytes limit for safe demonstration
@@ -250,24 +246,21 @@ def init_participant_routes(bp):
         # Compute SHA-256 hash of file content
         sha256 = hashlib.sha256(file_bytes).hexdigest()
 
-        # Secure storage in isolated directory with UUID prefix
+        # Secure storage in private Vercel Blob (if configured) or isolated local directory
         safe_orig_name = secure_filename(file.filename)
         stored_name = f"{uuid.uuid4().hex}_{safe_orig_name}"
-        try:
-            os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-        except OSError:
-            pass
-        dest_path = os.path.join(UPLOAD_FOLDER, stored_name)
-
-        with open(dest_path, 'wb') as f:
-            f.write(file_bytes)
+        stored_ref = store_demonstration_file(
+            stored_name=stored_name,
+            file_bytes=file_bytes,
+            mime_type=file.content_type or 'application/octet-stream'
+        )
 
         upload_entry = DemonstrationUpload(
             campaign_id=link.campaign_id,
             session_id=ts.id,
             participant_id=link.participant_id,
             original_filename=safe_orig_name,
-            stored_filename=stored_name,
+            stored_filename=stored_ref,
             file_size_bytes=file_size,
             mime_type=file.content_type or 'application/octet-stream',
             sha256_hash=sha256,

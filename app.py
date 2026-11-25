@@ -362,23 +362,17 @@ def register_core_routes(app):
 
     def health_check():
         from sqlalchemy import text
+        from security_platform.events import broadcaster
+        from security_platform.storage import is_vercel_blob_configured
+
         db_status = "connected"
         try:
             db.session.execute(text("SELECT 1"))
         except Exception:
             db_status = "disconnected"
 
-        redis_status = "not_configured"
-        if os.getenv('REDIS_URL'):
-            try:
-                from security_platform.events import broadcaster
-                if broadcaster._redis:
-                    broadcaster._redis.ping()
-                    redis_status = "connected"
-                else:
-                    redis_status = "unavailable"
-            except Exception:
-                redis_status = "unavailable"
+        redis_status = broadcaster.ping()
+        storage_status = "vercel_blob_private" if is_vercel_blob_configured() else "local_filesystem"
 
         status_code = 200 if db_status == "connected" else 503
         return jsonify({
@@ -386,6 +380,7 @@ def register_core_routes(app):
             'timestamp': utcnow_naive().isoformat() + 'Z',
             'database': db_status,
             'redis': redis_status,
+            'storage': storage_status,
         }), status_code
 
     app.add_url_rule('/healthz', 'healthz', health_check)
@@ -456,10 +451,11 @@ def create_app(test_config=None):
             secret_key = 'dev-secret-key-local-only'
     app.config['SECRET_KEY'] = secret_key
 
-    # Database URI (supports Render postgres://, Vercel POSTGRES_URL, or tempfile sqlite on serverless)
+    # Database URI (supports Neon/Vercel DATABASE_URL, POSTGRES_URL, or tempfile sqlite on serverless)
     raw_db_url = (
         os.getenv('DATABASE_URL')
         or os.getenv('POSTGRES_URL')
+        or os.getenv('NEON_DATABASE_URL')
         or os.getenv('PHISHLAB_DATABASE_URI')
     )
     if not raw_db_url:
@@ -479,10 +475,14 @@ def create_app(test_config=None):
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
     if "sqlite" not in raw_db_url:
-        app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
+        engine_opts = {
             'pool_pre_ping': True,
             'pool_recycle': 300,
         }
+        if is_vercel:
+            engine_opts['pool_size'] = 2
+            engine_opts['max_overflow'] = 3
+        app.config['SQLALCHEMY_ENGINE_OPTIONS'] = engine_opts
 
     app.config['MAIL_SERVER'] = os.getenv('MAIL_SERVER', '127.0.0.1')
     app.config['MAIL_PORT'] = int(os.getenv('MAIL_PORT', '1025'))
