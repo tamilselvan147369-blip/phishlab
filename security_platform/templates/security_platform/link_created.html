@@ -71,21 +71,21 @@
 
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 15px; margin-top: 15px;">
             {% set plat_meta = {
-                'whatsapp': {'label': 'WhatsApp', 'color': '#25D366', 'mode': 'Official Share Intent + Manual Copy'},
-                'telegram': {'label': 'Telegram', 'color': '#0088cc', 'mode': 'Official Share Intent + Manual Copy'},
-                'linkedin': {'label': 'LinkedIn', 'color': '#0A66C2', 'mode': 'Manual Copy / Official Share'},
-                'x': {'label': 'X (Twitter)', 'color': '#1DA1F2', 'mode': 'Official Tweet Intent + Manual Copy'},
-                'instagram': {'label': 'Instagram', 'color': '#E1306C', 'mode': 'Authorized Manual DM Copy'},
-                'facebook_messenger': {'label': 'Facebook Messenger', 'color': '#0084FF', 'mode': 'Authorized Manual DM Copy'}
+                'whatsapp': {'label': 'WhatsApp', 'mode': 'Official Share Intent + Manual Copy'},
+                'telegram': {'label': 'Telegram', 'mode': 'Official Share Intent + Manual Copy'},
+                'linkedin': {'label': 'LinkedIn', 'mode': 'Manual Copy / Official Share'},
+                'x': {'label': 'X (Twitter)', 'mode': 'Official Tweet Intent + Manual Copy'},
+                'instagram': {'label': 'Instagram', 'mode': 'Authorized Manual DM Copy'},
+                'facebook_messenger': {'label': 'Facebook Messenger', 'mode': 'Authorized Manual DM Copy'}
             } %}
             {% for plat_key, payload in distributions.items() %}
-            {% set meta = plat_meta.get(plat_key, {'label': plat_key|title, 'color': '#7DF9FF', 'mode': 'Manual Copy'}) %}
-            <div style="background: #0d1525; border: 1px solid {{ meta.color }}; border-radius: 6px; padding: 14px; display: flex; flex-direction: column; justify-content: space-between;">
+            {% set meta = plat_meta.get(plat_key, {'label': plat_key|title, 'mode': 'Manual Copy'}) %}
+            <div class="plat-card plat-{{ plat_key }}">
                 <div>
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-                        <span style="color: {{ meta.color }}; font-weight: bold;">{{ meta.label }}</span>
+                        <span class="plat-title-{{ plat_key }}" style="font-weight: bold;">{{ meta.label }}</span>
                         {% if payload.dispatch_link %}
-                        <a href="{{ payload.dispatch_link }}" target="_blank" rel="noopener noreferrer" class="btn btn-sm" style="background: {{ meta.color }}; color: #fff; padding: 3px 8px; font-size: 0.75rem; text-decoration: none; border-radius: 4px;">Launch Web</a>
+                        <a href="{{ payload.dispatch_link }}" target="_blank" rel="noopener noreferrer" class="btn btn-sm plat-btn-{{ plat_key }}" style="color: #fff; padding: 3px 8px; font-size: 0.75rem; text-decoration: none; border-radius: 4px;">Launch Web</a>
                         {% else %}
                         <span style="font-size: 0.7rem; color: #8892B0; border: 1px solid #233554; padding: 2px 6px; border-radius: 4px;">Manual Copy</span>
                         {% endif %}
@@ -100,6 +100,41 @@
     </div>
 
 </div>
+
+<style>
+.plat-card {
+    background: #0d1525;
+    border: 1px solid #233554;
+    border-radius: 6px;
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+.plat-whatsapp { border-color: #25D366; }
+.plat-title-whatsapp { color: #25D366; }
+.plat-btn-whatsapp { background: #25D366; }
+
+.plat-telegram { border-color: #0088cc; }
+.plat-title-telegram { color: #0088cc; }
+.plat-btn-telegram { background: #0088cc; }
+
+.plat-linkedin { border-color: #0A66C2; }
+.plat-title-linkedin { color: #0A66C2; }
+.plat-btn-linkedin { background: #0A66C2; }
+
+.plat-x { border-color: #1DA1F2; }
+.plat-title-x { color: #1DA1F2; }
+.plat-btn-x { background: #1DA1F2; }
+
+.plat-instagram { border-color: #E1306C; }
+.plat-title-instagram { color: #E1306C; }
+.plat-btn-instagram { background: #E1306C; }
+
+.plat-facebook_messenger { border-color: #0084FF; }
+.plat-title-facebook_messenger { color: #0084FF; }
+.plat-btn-facebook_messenger { background: #0084FF; }
+</style>
 
 <script>
 function copyTestingUrl() {

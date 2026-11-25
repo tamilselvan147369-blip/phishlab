@@ -85,7 +85,7 @@
                     {% for evt in recent_events %}
                     <div class="event-row" style="background: rgba(10, 16, 28, 0.7); border: 1px solid #1a2a44; border-radius: 6px; padding: 10px 12px; font-size: 0.85rem;">
                         <div style="display: flex; justify-content: space-between; align-items: center;">
-                            <span style="font-weight: bold; color: {% if evt.event_type == 'suspicious_reported' %}#2ecc71{% elif evt.event_type == 'file_demonstration' %}#e67e22{% elif evt.event_type == 'consent_agreed' %}#3498db{% else %}#7DF9FF{% endif %};">
+                            <span class="evt-label {% if evt.event_type == 'suspicious_reported' %}evt-reported{% elif evt.event_type in ('file_demonstration', 'file_uploaded') %}evt-file{% elif evt.event_type in ('consent_agreed', 'consent_submitted') %}evt-consent{% else %}evt-default{% endif %}">
                                 {{ evt.event_type|replace('_', ' ')|title }}
                             </span>
                             <span style="color: #6c7d9c; font-size: 0.75rem;">{{ evt.timestamp.strftime('%H:%M:%S UTC') }}</span>
@@ -473,6 +473,11 @@
 </script>
 
 <style>
+.evt-label { font-weight: bold; }
+.evt-reported { color: #2ecc71; }
+.evt-file { color: #e67e22; }
+.evt-consent { color: #3498db; }
+.evt-default { color: #7DF9FF; }
 @keyframes pulse {
     0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(46, 204, 113, 0.7); }
     70% { transform: scale(1); box-shadow: 0 0 0 8px rgba(46, 204, 113, 0); }
