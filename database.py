@@ -84,22 +84,23 @@ class Event(db.Model):
         _init_sa_model(self, **kwargs)
 
 def init_db(app):
-    """Initialise the SQLite database.
-
-    This drops existing tables and recreates them, ensuring the schema
-    (including newly added columns such as `uuid` and `status`) is up‑to‑date.
-    In a production setting you would use proper migrations; for this
-    academic demo a full reset is acceptable.
-    """
+    """Initialise the database."""
     db.init_app(app)
     with app.app_context():
-        os.makedirs('database', exist_ok=True)
+        if not (os.getenv('VERCEL') == '1' or 'VERCEL' in os.environ):
+            try:
+                os.makedirs('database', exist_ok=True)
+            except OSError:
+                pass
         # Ensure all models are loaded in SQLAlchemy metadata before create_all
         try:
             import security_platform.models
         except ImportError:
             pass
-        db.create_all()
+        try:
+            db.create_all()
+        except Exception:
+            pass
         # Safe idempotent column migration for SQLite
         try:
             from sqlalchemy import inspect, text
@@ -109,5 +110,13 @@ def init_db(app):
                 if 'scenario_key' not in cols:
                     db.session.execute(text("ALTER TABLE testing_links ADD COLUMN scenario_key VARCHAR(64) DEFAULT 'security_alert'"))
                     db.session.commit()
+        except Exception:
+            pass
+        # Seed default simulations if table exists and is empty
+        try:
+            from social_simulation.models import SocialSimulation
+            from social_simulation.scenarios import seed_default_simulation
+            if SocialSimulation.query.count() == 0:
+                seed_default_simulation(db.session)
         except Exception:
             pass

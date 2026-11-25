@@ -409,22 +409,29 @@ def create_app(test_config=None):
         or os.getenv('FLASK_ENV') == 'production'
         or os.getenv('PRODUCTION') == 'true'
     )
+    is_vercel = os.getenv('VERCEL') == '1' or 'VERCEL' in os.environ
     app.config['IS_PRODUCTION'] = is_prod
 
     # Secret Key configuration
     secret_key = os.getenv('SECRET_KEY') or os.getenv('FLASK_SECRET_KEY')
     if not secret_key:
-        if is_prod:
+        if is_prod and not is_vercel:
             raise RuntimeError("CRITICAL SECURITY ERROR: SECRET_KEY environment variable is required in production.")
         secret_key = 'dev-secret-key-change-in-production-2026'
     app.config['SECRET_KEY'] = secret_key
 
-    # Database URI (supports Render postgres:// and postgresql:// with psycopg2)
+    # Database URI (supports Render postgres://, Vercel POSTGRES_URL, or /tmp sqlite on serverless)
     raw_db_url = (
         os.getenv('DATABASE_URL')
+        or os.getenv('POSTGRES_URL')
         or os.getenv('PHISHLAB_DATABASE_URI')
-        or f"sqlite:///{os.path.abspath('database/phishlab.db')}"
     )
+    if not raw_db_url:
+        if is_vercel:
+            raw_db_url = "sqlite:////tmp/phishlab.db"
+        else:
+            raw_db_url = f"sqlite:///{os.path.abspath('database/phishlab.db')}"
+
     if raw_db_url.startswith("postgres://"):
         raw_db_url = raw_db_url.replace("postgres://", "postgresql+psycopg2://", 1)
     elif raw_db_url.startswith("postgresql://") and "+psycopg2" not in raw_db_url:
