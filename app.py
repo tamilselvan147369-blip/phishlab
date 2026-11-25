@@ -463,9 +463,32 @@ def create_app(test_config=None):
         app.config.update(test_config)
 
     # Apply ProxyFix when running behind reverse proxies (Render, Cloudflare, etc.)
-    if is_prod or os.getenv('BEHIND_PROXY') == 'true':
+    if is_prod or is_vercel or os.getenv('BEHIND_PROXY') == 'true':
         from werkzeug.middleware.proxy_fix import ProxyFix
         app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
+
+    # Normalize Vercel serverless request pathing
+    class VercelPathNormalizer:
+        def __init__(self, wsgi):
+            self.wsgi = wsgi
+        def __call__(self, environ, start_response):
+            path = environ.get('PATH_INFO', '')
+            qs = environ.get('QUERY_STRING', '')
+            if '__vercel_path' in qs:
+                import urllib.parse
+                params = urllib.parse.parse_qs(qs, keep_blank_values=True)
+                if '__vercel_path' in params and params['__vercel_path']:
+                    target = params['__vercel_path'][0]
+                    if not target.startswith('/'):
+                        target = '/' + target
+                    environ['PATH_INFO'] = target
+                    clean = {k: v for k, v in params.items() if k != '__vercel_path'}
+                    environ['QUERY_STRING'] = urllib.parse.urlencode(clean, doseq=True)
+            elif path in ('/api/index', '/api/index.py', '/api'):
+                environ['PATH_INFO'] = '/'
+            return self.wsgi(environ, start_response)
+
+    app.wsgi_app = VercelPathNormalizer(app.wsgi_app)
 
     # Initialise extensions
     csrf.init_app(app)
