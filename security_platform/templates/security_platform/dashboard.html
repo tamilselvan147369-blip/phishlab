@@ -116,11 +116,20 @@
                 
                 <div style="margin-bottom: 12px;">
                     <label style="display: block; font-size: 0.85rem; color: #ccd6f6; margin-bottom: 4px;">Target Campaign *</label>
+                    {% if campaigns %}
                     <select name="campaign_id" required class="form-control" style="background: #0d1525; border: 1px solid #233554; color: #E0E7FF; padding: 8px; width: 100%; border-radius: 4px;">
                         {% for c in campaigns %}
                             <option value="{{ c.id }}">{{ c.name }} ({{ c.scenario_type|title }})</option>
                         {% endfor %}
                     </select>
+                    {% else %}
+                    <select name="campaign_id" disabled class="form-control" style="background: #0d1525; border: 1px solid #c0392b; color: #8892B0; padding: 8px; width: 100%; border-radius: 4px;">
+                        <option value="">⚠ No campaigns yet — create one below first</option>
+                    </select>
+                    <p style="color: #e74c3c; font-size: 0.82rem; margin-top: 6px; margin-bottom: 0;">
+                        ⬇ Create a Security Campaign first using the form below, then generate testing links.
+                    </p>
+                    {% endif %}
                 </div>
 
                 <div style="margin-bottom: 12px;">

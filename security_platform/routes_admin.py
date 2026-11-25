@@ -33,34 +33,56 @@ def init_admin_routes(bp):
         """Central Cybersecurity Operations Dashboard."""
         try:
             campaigns = TestingCampaign.query.order_by(TestingCampaign.id.desc()).all()
+            total_campaigns = len(campaigns)
+            active_campaigns = sum(1 for c in campaigns if c.status == 'active')
+            total_links = TestingLink.query.count()
+            total_sessions = TestingSession.query.count()
+            consents_count = ParticipantConsent.query.count()
+            completed_count = TestingSession.query.filter_by(completed=True).count()
+            reported_count = TestingEvent.query.filter_by(event_type='suspicious_reported').count()
+            file_demo_count = DemonstrationUpload.query.count()
+            browser_stats = dict(
+                db.session.query(TestingSession.browser_family, func.count(TestingSession.id))
+                .group_by(TestingSession.browser_family)
+                .all()
+            )
+            device_stats = dict(
+                db.session.query(TestingSession.device_category, func.count(TestingSession.id))
+                .group_by(TestingSession.device_category)
+                .all()
+            )
+            recent_events = TestingEvent.query.order_by(TestingEvent.id.desc()).limit(20).all()
+            recent_uploads = DemonstrationUpload.query.filter_by(deleted_at=None).order_by(DemonstrationUpload.id.desc()).limit(10).all()
         except Exception:
+            # Tables may not exist yet on a fresh serverless cold-start — auto-create and retry
             db.create_all()
             campaigns = TestingCampaign.query.order_by(TestingCampaign.id.desc()).all()
-
-        total_campaigns = len(campaigns)
-        active_campaigns = sum(1 for c in campaigns if c.status == 'active')
-
-        total_links = TestingLink.query.count()
-        total_sessions = TestingSession.query.count()
-        consents_count = ParticipantConsent.query.count()
-        completed_count = TestingSession.query.filter_by(completed=True).count()
-        reported_count = TestingEvent.query.filter_by(event_type='suspicious_reported').count()
-        file_demo_count = DemonstrationUpload.query.count()
-
-        # Telemetry statistics
-        browser_stats = dict(
-            db.session.query(TestingSession.browser_family, func.count(TestingSession.id))
-            .group_by(TestingSession.browser_family)
-            .all()
-        )
-        device_stats = dict(
-            db.session.query(TestingSession.device_category, func.count(TestingSession.id))
-            .group_by(TestingSession.device_category)
-            .all()
-        )
-
-        recent_events = TestingEvent.query.order_by(TestingEvent.id.desc()).limit(20).all()
-        recent_uploads = DemonstrationUpload.query.filter_by(deleted_at=None).order_by(DemonstrationUpload.id.desc()).limit(10).all()
+            total_campaigns = len(campaigns)
+            active_campaigns = sum(1 for c in campaigns if c.status == 'active')
+            try:
+                total_links = TestingLink.query.count()
+                total_sessions = TestingSession.query.count()
+                consents_count = ParticipantConsent.query.count()
+                completed_count = TestingSession.query.filter_by(completed=True).count()
+                reported_count = TestingEvent.query.filter_by(event_type='suspicious_reported').count()
+                file_demo_count = DemonstrationUpload.query.count()
+                browser_stats = dict(
+                    db.session.query(TestingSession.browser_family, func.count(TestingSession.id))
+                    .group_by(TestingSession.browser_family)
+                    .all()
+                )
+                device_stats = dict(
+                    db.session.query(TestingSession.device_category, func.count(TestingSession.id))
+                    .group_by(TestingSession.device_category)
+                    .all()
+                )
+                recent_events = TestingEvent.query.order_by(TestingEvent.id.desc()).limit(20).all()
+                recent_uploads = DemonstrationUpload.query.filter_by(deleted_at=None).order_by(DemonstrationUpload.id.desc()).limit(10).all()
+            except Exception:
+                total_links = total_sessions = consents_count = completed_count = 0
+                reported_count = file_demo_count = 0
+                browser_stats = device_stats = {}
+                recent_events = recent_uploads = []
 
         return render_template(
             'security_platform/dashboard.html',
