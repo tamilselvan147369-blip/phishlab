@@ -10,19 +10,26 @@ services:
     envVars:
       - key: FLASK_ENV
         value: production
+      - key: PYTHON_VERSION
+        value: "3.11.9"
       - key: SECRET_KEY
         generateValue: true
+      - key: SESSION_EPOCH
+        value: "2"
       - key: DATABASE_URL
         fromDatabase:
           name: phishlab-postgres
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: phishlab-redis
           property: connectionString
       - key: ADMIN_USERNAME
         value: admin
       - key: ADMIN_PASSWORD
         sync: false
       - key: BASE_URL
-        sync: false
-      - key: REDIS_URL
         sync: false
       - key: SESSION_COOKIE_SECURE
         value: "True"
@@ -36,6 +43,13 @@ services:
       name: phishlab-data
       mountPath: /var/data
       sizeGB: 1
+
+  - type: redis
+    name: phishlab-redis
+    region: oregon
+    plan: free
+    maxmemoryPolicy: allkeys-lru
+    ipAllowList: []
 
 databases:
   - name: phishlab-postgres
