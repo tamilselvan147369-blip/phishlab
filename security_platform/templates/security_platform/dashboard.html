@@ -432,43 +432,67 @@
         }
     };
 
+    function appendEventRow(data) {
+        if (!container) return;
+        if (emptyMsg) emptyMsg.style.display = 'none';
+
+        var row = document.createElement('div');
+        row.className = 'event-row';
+        row.style.background = 'rgba(10, 16, 28, 0.9)';
+        row.style.border = '1px solid #7DF9FF';
+        row.style.borderRadius = '6px';
+        row.style.padding = '10px 12px';
+        row.style.fontSize = '0.85rem';
+        row.style.animation = 'flash 1.5s ease-out';
+
+        var color = '#7DF9FF';
+        if (data.event_type === 'suspicious_reported') color = '#2ecc71';
+        else if (data.event_type === 'file_demonstration' || data.event_type === 'file_uploaded') color = '#e67e22';
+        else if (data.event_type === 'consent_agreed' || data.event_type === 'consent_submitted') color = '#3498db';
+
+        row.innerHTML =
+            '<div style="display: flex; justify-content: space-between; align-items: center;">' +
+                '<span style="font-weight: bold; color: ' + color + ';">' + (data.event_type || 'Event').replace(/_/g, ' ') + '</span>' +
+                '<span style="color: #6c7d9c; font-size: 0.75rem;">' + (data.timestamp || 'Just now') + '</span>' +
+            '</div>' +
+            '<div style="color: #ccd6f6; margin-top: 4px; font-size: 0.8rem;">' + (data.details || '') + '</div>' +
+            '<div style="color: #8892B0; margin-top: 4px; font-size: 0.75rem; display: flex; gap: 10px;">' +
+                '<span>🌐 ' + (data.browser_family || 'Browser') + '</span>' +
+                '<span>💻 ' + (data.os_family || 'OS') + '</span>' +
+                '<span>📱 ' + (data.device_category || 'Device') + '</span>' +
+            '</div>';
+
+        container.insertBefore(row, container.firstChild);
+    }
+
+    var seenIds = {};
     evtSource.onmessage = function(e) {
         if (!e.data) return;
         try {
-            var data = JSON.parse(e.data);
-            if (emptyMsg) emptyMsg.style.display = 'none';
-
-            var row = document.createElement('div');
-            row.className = 'event-row';
-            row.style.background = 'rgba(10, 16, 28, 0.9)';
-            row.style.border = '1px solid #7DF9FF';
-            row.style.borderRadius = '6px';
-            row.style.padding = '10px 12px';
-            row.style.fontSize = '0.85rem';
-            row.style.animation = 'flash 1.5s ease-out';
-
-            var color = '#7DF9FF';
-            if (data.event_type === 'suspicious_reported') color = '#2ecc71';
-            else if (data.event_type === 'file_demonstration') color = '#e67e22';
-            else if (data.event_type === 'consent_agreed') color = '#3498db';
-
-            row.innerHTML = 
-                '<div style="display: flex; justify-content: space-between; align-items: center;">' +
-                    '<span style="font-weight: bold; color: ' + color + ';">' + (data.event_type || 'Event').replace(/_/g, ' ') + '</span>' +
-                    '<span style="color: #6c7d9c; font-size: 0.75rem;">' + (data.timestamp || 'Just now') + '</span>' +
-                '</div>' +
-                '<div style="color: #ccd6f6; margin-top: 4px; font-size: 0.8rem;">' + (data.details || '') + '</div>' +
-                '<div style="color: #8892B0; margin-top: 4px; font-size: 0.75rem; display: flex; gap: 10px;">' +
-                    '<span>🌐 ' + (data.browser_family || 'Browser') + '</span>' +
-                    '<span>💻 ' + (data.os_family || 'OS') + '</span>' +
-                    '<span>📱 ' + (data.device_category || 'Device') + '</span>' +
-                '</div>';
-
-            container.insertBefore(row, container.firstChild);
+            appendEventRow(JSON.parse(e.data));
         } catch (err) {
             console.error('SSE parse error:', err);
         }
     };
+
+    // Resilient DB-backed sync fallback for serverless / reconnect gaps
+    setInterval(function() {
+        fetch("{{ url_for('security_platform.events_recent') }}")
+            .then(function(r) { return r.ok ? r.json() : null; })
+            .then(function(payload) {
+                if (!payload || !payload.events) return;
+                for (var i = payload.events.length - 1; i >= 0; i--) {
+                    var ev = payload.events[i];
+                    if (ev.id && !seenIds[ev.id]) {
+                        seenIds[ev.id] = true;
+                        if (Object.keys(seenIds).length > 20) {
+                            appendEventRow(ev);
+                        }
+                    }
+                }
+            })
+            .catch(function() {});
+    }, 6000);
 })();
 </script>
 

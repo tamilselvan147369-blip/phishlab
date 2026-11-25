@@ -34,10 +34,16 @@ def clear_failed_logins(ip_address: str):
 
 
 def admin_required(view_func):
-    """Decorator to protect admin routes requiring is_admin session flag."""
+    """Decorator to protect admin routes requiring is_admin session flag and valid session epoch."""
     @wraps(view_func)
     def _wrapped_view(*args, **kwargs):
+        from flask import current_app
         if session.get('is_admin'):
+            expected_epoch = str(current_app.config.get('SESSION_EPOCH', '1'))
+            token_epoch = session.get('_session_epoch')
+            if token_epoch is not None and str(token_epoch) != expected_epoch:
+                session.clear()
+                abort(403)
             return view_func(*args, **kwargs)
         abort(403)
     return _wrapped_view

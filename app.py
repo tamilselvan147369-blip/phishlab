@@ -306,10 +306,15 @@ def admin_login():
         expected_pass = current_app.config.get('ADMIN_PASSWORD', os.getenv('ADMIN_PASSWORD'))
         expected_hash = current_app.config.get('ADMIN_PASSWORD_HASH', os.getenv('ADMIN_PASSWORD_HASH'))
 
-        # Only allow dev fallback credentials if not in production
+        # Only allow dev fallback credentials in local development (never in production or Vercel)
+        is_vercel_env = os.getenv('VERCEL') == '1' or 'VERCEL' in os.environ
         if not expected_pass and not expected_hash:
-            if not current_app.config.get('IS_PRODUCTION', False):
+            if not current_app.config.get('IS_PRODUCTION', False) and not is_vercel_env:
                 expected_pass = 'phishlab-admin-2026!'
+            else:
+                current_app.logger.error("ADMIN_PASSWORD / ADMIN_PASSWORD_HASH not configured in production.")
+                flash('Administrator credentials are not configured on this server.', 'danger')
+                return render_template('admin_login.html', form=form), 503
 
         user_ok = hmac.compare_digest(form.username.data, expected_user)
         pass_ok = False
@@ -323,6 +328,7 @@ def admin_login():
             clear_failed_logins(client_ip)
             session['is_admin'] = True
             session['admin_name'] = form.username.data
+            session['_session_epoch'] = str(current_app.config.get('SESSION_EPOCH', '1'))
             flash('Logged in successfully as Administrator.', 'success')
             next_url = request.args.get('next') or url_for('security_platform.operations_dashboard')
             return redirect(next_url)
@@ -355,16 +361,31 @@ def register_core_routes(app):
     app.add_url_rule('/admin/logout', 'admin_logout', admin_logout)
 
     def health_check():
+        from sqlalchemy import text
         db_status = "connected"
         try:
-            db.session.execute(func.now())
+            db.session.execute(text("SELECT 1"))
         except Exception:
             db_status = "disconnected"
+
+        redis_status = "not_configured"
+        if os.getenv('REDIS_URL'):
+            try:
+                from security_platform.events import broadcaster
+                if broadcaster._redis:
+                    broadcaster._redis.ping()
+                    redis_status = "connected"
+                else:
+                    redis_status = "unavailable"
+            except Exception:
+                redis_status = "unavailable"
+
         status_code = 200 if db_status == "connected" else 503
         return jsonify({
             'status': 'healthy' if db_status == 'connected' else 'unhealthy',
             'timestamp': utcnow_naive().isoformat() + 'Z',
-            'database': db_status
+            'database': db_status,
+            'redis': redis_status,
         }), status_code
 
     app.add_url_rule('/healthz', 'healthz', health_check)
@@ -410,20 +431,29 @@ def create_app(test_config=None):
     """
     app = Flask(__name__)
 
+    is_vercel = os.getenv('VERCEL') == '1' or 'VERCEL' in os.environ
     is_prod = (
         os.getenv('RENDER') == 'true'
         or os.getenv('FLASK_ENV') == 'production'
         or os.getenv('PRODUCTION') == 'true'
+        or is_vercel
     )
-    is_vercel = os.getenv('VERCEL') == '1' or 'VERCEL' in os.environ
+    if test_config and test_config.get('TESTING'):
+        is_prod = bool(test_config.get('IS_PRODUCTION', False))
     app.config['IS_PRODUCTION'] = is_prod
+    app.config['SESSION_EPOCH'] = os.getenv('SESSION_EPOCH', '1')
 
-    # Secret Key configuration
+    # Secret Key configuration (never use static fallback in production)
     secret_key = os.getenv('SECRET_KEY') or os.getenv('FLASK_SECRET_KEY')
     if not secret_key:
-        if is_prod and not is_vercel:
+        if is_prod and not is_vercel and not (test_config and test_config.get('TESTING')):
             raise RuntimeError("CRITICAL SECURITY ERROR: SECRET_KEY environment variable is required in production.")
-        secret_key = 'dev-secret-key-change-in-production-2026'
+        if is_vercel:
+            import secrets as _secrets
+            secret_key = _secrets.token_hex(32)
+            app.logger.warning("SECRET_KEY environment variable is not set on Vercel; using ephemeral per-instance key.")
+        else:
+            secret_key = 'dev-secret-key-local-only'
     app.config['SECRET_KEY'] = secret_key
 
     # Database URI (supports Render postgres://, Vercel POSTGRES_URL, or tempfile sqlite on serverless)

@@ -235,3 +235,41 @@ def test_csrf_enabled_participant_flow():
     )
     assert with_csrf.status_code == 200
     assert with_csrf.get_json()['status'] == 'success'
+
+
+def test_production_no_default_admin_password_and_session_epoch_invalidation():
+    """Production mode rejects default fallback password and SESSION_EPOCH invalidates old sessions."""
+    prod_app = create_app(test_config={
+        'TESTING': True,
+        'IS_PRODUCTION': True,
+        'SQLALCHEMY_DATABASE_URI': 'sqlite:///:memory:',
+        'WTF_CSRF_ENABLED': False,
+        'SECRET_KEY': 'rotated-prod-secret-key',
+        'SESSION_EPOCH': '2',
+    })
+    with prod_app.app_context():
+        db.create_all()
+
+    c = prod_app.test_client()
+    # Default dev password must NOT work when IS_PRODUCTION=True and ADMIN_PASSWORD is unset
+    resp = c.post('/admin/login', data={
+        'username': 'admin',
+        'password': 'phishlab-admin-2026!',
+    })
+    assert resp.status_code == 503
+
+    # Old session with _session_epoch='1' is rejected when SESSION_EPOCH='2'
+    with c.session_transaction() as sess:
+        sess['is_admin'] = True
+        sess['_session_epoch'] = '1'
+    dash = c.get('/security/dashboard')
+    assert dash.status_code == 403
+
+
+def test_events_recent_endpoint(admin_client, app):
+    """Persisted events endpoint requires admin auth and returns JSON events."""
+    anon = app.test_client()
+    assert anon.get('/security/events/recent').status_code == 403
+    r = admin_client.get('/security/events/recent')
+    assert r.status_code == 200
+    assert 'events' in r.get_json()

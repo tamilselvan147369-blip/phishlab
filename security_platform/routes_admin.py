@@ -273,23 +273,49 @@ def init_admin_routes(bp):
     # -----------------------------------------------------------------------
     # Live Real-Time Event Stream (Server-Sent Events)
     # -----------------------------------------------------------------------
+    @bp.route('/security/events/recent')
+    @admin_required
+    def events_recent():
+        """JSON fallback returning persisted recent events for serverless or SSE reconnect."""
+        events = TestingEvent.query.order_by(TestingEvent.id.desc()).limit(20).all()
+        return jsonify({
+            'events': [
+                {
+                    'id': e.id,
+                    'campaign_id': e.campaign_id,
+                    'event_type': e.event_type,
+                    'browser_family': e.browser_family or 'Unknown',
+                    'os_family': e.os_family or 'Unknown',
+                    'device_category': e.device_category or 'Desktop',
+                    'details': e.details or '',
+                    'timestamp': e.timestamp.strftime('%H:%M:%S UTC') if e.timestamp else ''
+                }
+                for e in events
+            ]
+        })
+
     @bp.route('/security/events/stream')
     @admin_required
     def events_stream():
         """SSE stream endpoint pushing live telemetry events to admin dashboard."""
+        is_serverless = os.getenv('VERCEL') == '1' or 'VERCEL' in os.environ
+
         def event_generator():
             q = broadcaster.subscribe()
+            start_ts = time.monotonic()
             try:
-                # Initial keep-alive ping
-                yield f": connected to real-time event pipeline\n\n"
+                yield "retry: 3000\n"
+                yield ": connected to real-time event pipeline\n\n"
                 while True:
+                    if is_serverless and (time.monotonic() - start_ts) >= 25:
+                        # Close gracefully before serverless timeout; EventSource reconnects automatically
+                        break
                     try:
-                        evt = q.get(timeout=20)
+                        evt = q.get(timeout=15)
                         data_str = json.dumps(evt)
                         yield f"data: {data_str}\n\n"
                     except Exception:
-                        # Keep-alive heartbeat ping every 20s
-                        yield f": keep-alive\n\n"
+                        yield ": keep-alive\n\n"
             finally:
                 broadcaster.unsubscribe(q)
 
