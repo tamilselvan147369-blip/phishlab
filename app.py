@@ -391,6 +391,12 @@ def register_error_handlers(app):
 
     @app.errorhandler(500)
     def internal_error(e):
+        import sys, traceback
+        orig = getattr(e, 'original_exception', e)
+        print(f"[ERROR 500] {request.path}: {orig}", file=sys.stderr)
+        traceback.print_exc()
+        if session.get('is_admin') or request.args.get('debug') == '1':
+            return render_template('error.html', code=500, message=f'Internal Server Error: {orig}'), 500
         return render_template('error.html', code=500, message='Internal Server Error: An unexpected error occurred. Please contact the administrator.'), 500
 
 
@@ -511,6 +517,18 @@ def create_app(test_config=None):
     # Register Real-Time Phishing Security Testing Platform blueprint
     from security_platform import security_platform_bp
     app.register_blueprint(security_platform_bp)
+
+    # Ensure all tables across all subsystems are created in the database
+    with app.app_context():
+        try:
+            db.create_all()
+            # Seed default simulation campaign if database has no social simulations
+            from social_simulation.models import SocialSimulation
+            from social_simulation.scenarios import seed_default_simulation
+            if SocialSimulation.query.count() == 0:
+                seed_default_simulation(db.session)
+        except Exception as e:
+            app.logger.warning(f"Database table verification: {e}")
 
     # CLI command
     @app.cli.command('init-db')

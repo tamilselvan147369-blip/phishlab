@@ -31,7 +31,12 @@ def init_admin_routes(bp):
     @admin_required
     def operations_dashboard():
         """Central Cybersecurity Operations Dashboard."""
-        campaigns = TestingCampaign.query.order_by(TestingCampaign.id.desc()).all()
+        try:
+            campaigns = TestingCampaign.query.order_by(TestingCampaign.id.desc()).all()
+        except Exception:
+            db.create_all()
+            campaigns = TestingCampaign.query.order_by(TestingCampaign.id.desc()).all()
+
         total_campaigns = len(campaigns)
         active_campaigns = sum(1 for c in campaigns if c.status == 'active')
 
