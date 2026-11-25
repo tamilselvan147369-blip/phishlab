@@ -383,7 +383,9 @@ def register_error_handlers(app):
 
     @app.errorhandler(404)
     def not_found(e):
-        return render_template('error.html', code=404, message='Not Found: The requested URL was not found on this server.'), 404
+        path_info = request.environ.get('PATH_INFO', '')
+        script_name = request.environ.get('SCRIPT_NAME', '')
+        return render_template('error.html', code=404, message=f"Not Found: The requested URL was '{request.path}' (PATH_INFO='{path_info}', SCRIPT_NAME='{script_name}')."), 404
 
     @app.errorhandler(410)
     def gone(e):
