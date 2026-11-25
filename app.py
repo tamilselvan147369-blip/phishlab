@@ -420,7 +420,7 @@ def create_app(test_config=None):
         secret_key = 'dev-secret-key-change-in-production-2026'
     app.config['SECRET_KEY'] = secret_key
 
-    # Database URI (supports Render postgres://, Vercel POSTGRES_URL, or /tmp sqlite on serverless)
+    # Database URI (supports Render postgres://, Vercel POSTGRES_URL, or tempfile sqlite on serverless)
     raw_db_url = (
         os.getenv('DATABASE_URL')
         or os.getenv('POSTGRES_URL')
@@ -428,7 +428,10 @@ def create_app(test_config=None):
     )
     if not raw_db_url:
         if is_vercel:
-            raw_db_url = "sqlite:////tmp/phishlab.db"
+            import tempfile
+            t_dir = tempfile.gettempdir()
+            db_path = os.path.join(t_dir, 'phishlab.db').replace('\\', '/')
+            raw_db_url = f"sqlite:///{db_path}"
         else:
             raw_db_url = f"sqlite:///{os.path.abspath('database/phishlab.db')}"
 

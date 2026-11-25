@@ -1,5 +1,6 @@
 import sys
 import os
+import json
 import urllib.parse
 
 # Add parent directory to sys.path so the Flask application modules can be resolved
@@ -9,29 +10,43 @@ if ROOT_DIR not in sys.path:
 
 from app import app
 
-class VercelPathMiddleware:
-    """WSGI middleware to normalize PATH_INFO from Vercel rewrite parameter or headers."""
-    def __init__(self, wsgi_app):
-        self.wsgi_app = wsgi_app
+def handler(environ, start_response):
+    """Vercel entrypoint handler with environment inspection and route normalization."""
+    path_info = environ.get('PATH_INFO', '')
+    
+    # Debug endpoint to inspect exact Vercel proxy headers
+    if path_info == '/__debug_headers' or environ.get('HTTP_X_DEBUG_HEADERS') == '1':
+        start_response('200 OK', [('Content-Type', 'application/json')])
+        debug_data = {k: str(v) for k, v in environ.items() if isinstance(v, (str, int, float, bool))}
+        return [json.dumps(debug_data, indent=2).encode('utf-8')]
 
-    def __call__(self, environ, start_response):
-        qs = environ.get('QUERY_STRING', '')
-        if '__vercel_path' in qs:
-            params = urllib.parse.parse_qs(qs, keep_blank_values=True)
-            if '__vercel_path' in params and params['__vercel_path']:
-                target_path = params['__vercel_path'][0]
-                if not target_path.startswith('/'):
-                    target_path = '/' + target_path
-                environ['PATH_INFO'] = target_path
-                clean_params = {k: v for k, v in params.items() if k != '__vercel_path'}
-                environ['QUERY_STRING'] = urllib.parse.urlencode(clean_params, doseq=True)
-        else:
-            path_info = environ.get('PATH_INFO', '')
-            if path_info in ('/api/index.py', '/api/index', '/api'):
-                environ['PATH_INFO'] = '/'
+    # Check for original URL in common Vercel/proxy headers
+    orig_url = (
+        environ.get('HTTP_X_FORWARDED_URI')
+        or environ.get('HTTP_X_MATCHED_PATH')
+        or environ.get('HTTP_X_ORIGINAL_URI')
+        or environ.get('HTTP_X_REWRITE_URL')
+    )
+    
+    qs = environ.get('QUERY_STRING', '')
+    if '__vercel_path' in qs:
+        params = urllib.parse.parse_qs(qs, keep_blank_values=True)
+        if '__vercel_path' in params and params['__vercel_path']:
+            target = params['__vercel_path'][0]
+            if not target.startswith('/'):
+                target = '/' + target
+            environ['PATH_INFO'] = target
+            clean_params = {k: v for k, v in params.items() if k != '__vercel_path'}
+            environ['QUERY_STRING'] = urllib.parse.urlencode(clean_params, doseq=True)
+    elif orig_url and orig_url not in ('/api/index', '/api/index.py', '/api'):
+        environ['PATH_INFO'] = orig_url.split('?')[0]
+    elif path_info in ('/api/index', '/api/index.py', '/api'):
+        environ['PATH_INFO'] = '/'
 
-        return self.wsgi_app(environ, start_response)
+    return app(environ, start_response)
 
-app.wsgi_app = VercelPathMiddleware(app.wsgi_app)
+# Expose both app and handler for Vercel WSGI discovery
+app_handler = handler
+
 
 
