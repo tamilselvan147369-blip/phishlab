@@ -471,6 +471,9 @@ def create_app(test_config=None):
         raw_db_url = raw_db_url.replace("postgres://", "postgresql+psycopg2://", 1)
     elif raw_db_url.startswith("postgresql://") and "+psycopg2" not in raw_db_url:
         raw_db_url = raw_db_url.replace("postgresql://", "postgresql+psycopg2://", 1)
+    if "neon.tech" in raw_db_url and "sslmode=" not in raw_db_url:
+        sep = "&" if "?" in raw_db_url else "?"
+        raw_db_url = f"{raw_db_url}{sep}sslmode=require"
     app.config['SQLALCHEMY_DATABASE_URI'] = raw_db_url
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
@@ -479,6 +482,8 @@ def create_app(test_config=None):
             'pool_pre_ping': True,
             'pool_recycle': 300,
         }
+        if "neon.tech" in raw_db_url:
+            engine_opts['connect_args'] = {'sslmode': 'require'}
         if is_vercel:
             engine_opts['pool_size'] = 2
             engine_opts['max_overflow'] = 3
