@@ -32,9 +32,12 @@ class TestingCampaign(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(128), nullable=False)
     description = db.Column(db.Text, default='')
+    objective = db.Column(db.String(256), default='')
     scenario_type = db.Column(db.String(64), default='credential_audit')
     target_platforms = db.Column(db.String(256), default='whatsapp,instagram,facebook_messenger,telegram,x,linkedin')
     status = db.Column(db.String(20), default='active')  # 'active', 'paused', 'closed'
+    start_date = db.Column(db.Date, nullable=True)
+    end_date = db.Column(db.Date, nullable=True)
     max_uses_per_link = db.Column(db.Integer, default=0)  # 0 = unlimited within TTL
     link_ttl_hours = db.Column(db.Integer, default=48)
     created_at = db.Column(db.DateTime, default=utcnow_naive)
@@ -50,9 +53,12 @@ class TestingCampaign(db.Model):
         self,
         name=None,
         description=None,
+        objective=None,
         scenario_type='credential_audit',
         target_platforms='whatsapp,instagram,facebook_messenger,telegram,x,linkedin',
         status='active',
+        start_date=None,
+        end_date=None,
         max_uses_per_link=0,
         link_ttl_hours=48,
         created_at=None,
@@ -61,9 +67,12 @@ class TestingCampaign(db.Model):
     ):
         if name is not None: kwargs['name'] = name
         if description is not None: kwargs['description'] = description
+        if objective is not None: kwargs['objective'] = objective
         if scenario_type is not None: kwargs['scenario_type'] = scenario_type
         if target_platforms is not None: kwargs['target_platforms'] = target_platforms
         if status is not None: kwargs['status'] = status
+        if start_date is not None: kwargs['start_date'] = start_date
+        if end_date is not None: kwargs['end_date'] = end_date
         if max_uses_per_link is not None: kwargs['max_uses_per_link'] = max_uses_per_link
         if link_ttl_hours is not None: kwargs['link_ttl_hours'] = link_ttl_hours
         if created_at is not None: kwargs['created_at'] = created_at

@@ -5,12 +5,12 @@ import csv
 import io
 import json
 import time
-from datetime import datetime, timedelta
+from datetime import datetime, date, timedelta
 from flask import (
     render_template, request, redirect, url_for, flash, jsonify,
     Response, abort, current_app, session as flask_session
 )
-from sqlalchemy import func
+from sqlalchemy import func, inspect, text
 
 from database import db
 from auth import admin_required
@@ -25,6 +25,43 @@ from .distribution import DEFAULT_SCENARIO_TEMPLATES, build_distribution_payload
 from .storage import delete_demonstration_file
 
 
+def _ensure_campaign_columns():
+    """Safely add new optional TestingCampaign columns to existing databases without dropping data."""
+    try:
+        insp = inspect(db.engine)
+        if 'testing_campaigns' not in insp.get_table_names():
+            return
+        cols = {c['name'] for c in insp.get_columns('testing_campaigns')}
+        statements = []
+        if 'objective' not in cols:
+            statements.append("ALTER TABLE testing_campaigns ADD COLUMN objective VARCHAR(256) DEFAULT ''")
+        if 'start_date' not in cols:
+            statements.append("ALTER TABLE testing_campaigns ADD COLUMN start_date DATE")
+        if 'end_date' not in cols:
+            statements.append("ALTER TABLE testing_campaigns ADD COLUMN end_date DATE")
+        if statements:
+            with db.engine.begin() as conn:
+                for stmt in statements:
+                    conn.execute(text(stmt))
+    except Exception:
+        pass
+
+
+def _serialize_campaign(c):
+    return {
+        'id': c.id,
+        'name': c.name,
+        'description': c.description or '',
+        'objective': c.objective or '',
+        'scenario_type': c.scenario_type,
+        'status': c.status,
+        'start_date': c.start_date.isoformat() if c.start_date else None,
+        'end_date': c.end_date.isoformat() if c.end_date else None,
+        'created_at': c.created_at.strftime('%Y-%m-%d') if c.created_at else '',
+        'links_count': len(c.links) if c.links is not None else 0,
+    }
+
+
 def init_admin_routes(bp):
     """Register admin operations routes onto the blueprint."""
 
@@ -32,10 +69,12 @@ def init_admin_routes(bp):
     @admin_required
     def operations_dashboard():
         """Central Cybersecurity Operations Dashboard."""
+        _ensure_campaign_columns()
         try:
             campaigns = TestingCampaign.query.order_by(TestingCampaign.id.desc()).all()
+            eligible_campaigns = [c for c in campaigns if c.status == 'active']
             total_campaigns = len(campaigns)
-            active_campaigns = sum(1 for c in campaigns if c.status == 'active')
+            active_campaigns = len(eligible_campaigns)
             total_links = TestingLink.query.count()
             total_sessions = TestingSession.query.count()
             consents_count = ParticipantConsent.query.count()
@@ -63,9 +102,11 @@ def init_admin_routes(bp):
         except Exception:
             # Tables may not exist yet on a fresh serverless cold-start — auto-create and retry
             db.create_all()
+            _ensure_campaign_columns()
             campaigns = TestingCampaign.query.order_by(TestingCampaign.id.desc()).all()
+            eligible_campaigns = [c for c in campaigns if c.status == 'active']
             total_campaigns = len(campaigns)
-            active_campaigns = sum(1 for c in campaigns if c.status == 'active')
+            active_campaigns = len(eligible_campaigns)
             try:
                 total_links = TestingLink.query.count()
                 total_sessions = TestingSession.query.count()
@@ -101,6 +142,7 @@ def init_admin_routes(bp):
         return render_template(
             'security_platform/dashboard.html',
             campaigns=campaigns,
+            eligible_campaigns=eligible_campaigns,
             total_campaigns=total_campaigns,
             active_campaigns=active_campaigns,
             total_links=total_links,
@@ -121,26 +163,83 @@ def init_admin_routes(bp):
     # -----------------------------------------------------------------------
     # Campaign Management
     # -----------------------------------------------------------------------
+    @bp.route('/security/campaigns', methods=['GET'])
+    @admin_required
+    def campaigns_list():
+        """Return campaigns JSON for dynamic Target Campaign dropdown refresh."""
+        _ensure_campaign_columns()
+        all_camps = TestingCampaign.query.order_by(TestingCampaign.id.desc()).all()
+        active_camps = [c for c in all_camps if c.status == 'active']
+        return jsonify({
+            'status': 'success',
+            'campaigns': [_serialize_campaign(c) for c in all_camps],
+            'active_campaigns': [_serialize_campaign(c) for c in active_camps],
+        })
+
     @bp.route('/security/campaign/create', methods=['POST'])
     @admin_required
     def campaign_create():
-        name = request.form.get('name', '').strip()
-        desc = request.form.get('description', '').strip()
-        scenario = request.form.get('scenario_type', 'credential_audit')
-        platforms = request.form.getlist('target_platforms') or ['whatsapp', 'telegram', 'linkedin']
-        ttl_hours = int(request.form.get('link_ttl_hours', 48))
-        max_uses = int(request.form.get('max_uses_per_link', 0))
+        _ensure_campaign_columns()
+        wants_json = (
+            request.is_json
+            or 'application/json' in request.headers.get('Accept', '')
+            or request.headers.get('X-Requested-With') == 'XMLHttpRequest'
+        )
+        data = request.get_json(silent=True) if request.is_json else request.form
+
+        name = (data.get('name') or '').strip()
+        desc = (data.get('description') or '').strip()
+        objective = (data.get('objective') or '').strip()
+        scenario = (data.get('scenario_type') or 'security_alert').strip()
+        status_val = (data.get('status') or 'active').strip().lower()
+        if status_val not in ('active', 'paused'):
+            status_val = 'active'
+
+        start_raw = (data.get('start_date') or '').strip()
+        end_raw = (data.get('end_date') or '').strip()
+        start_dt = None
+        end_dt = None
+        try:
+            if start_raw:
+                start_dt = date.fromisoformat(start_raw)
+            if end_raw:
+                end_dt = date.fromisoformat(end_raw)
+        except ValueError:
+            msg = 'Invalid date format. Use YYYY-MM-DD.'
+            if wants_json:
+                return jsonify({'status': 'error', 'message': msg}), 400
+            flash(msg, 'danger')
+            return redirect(url_for('security_platform.operations_dashboard'))
+
+        if start_dt and end_dt and end_dt < start_dt:
+            msg = 'End date cannot be earlier than start date.'
+            if wants_json:
+                return jsonify({'status': 'error', 'message': msg}), 400
+            flash(msg, 'danger')
+            return redirect(url_for('security_platform.operations_dashboard'))
+
+        platforms = request.form.getlist('target_platforms') if not request.is_json else (data.get('target_platforms') or [])
+        if not platforms:
+            platforms = ['whatsapp', 'telegram', 'linkedin', 'instagram', 'facebook_messenger', 'x']
+        ttl_hours = int(data.get('link_ttl_hours') or 48)
+        max_uses = int(data.get('max_uses_per_link') or 0)
 
         if not name:
-            flash('Campaign name is required.', 'danger')
+            msg = 'Campaign name is required.'
+            if wants_json:
+                return jsonify({'status': 'error', 'message': msg}), 400
+            flash(msg, 'danger')
             return redirect(url_for('security_platform.operations_dashboard'))
 
         c = TestingCampaign(
             name=name,
             description=desc,
+            objective=objective,
             scenario_type=scenario,
             target_platforms=','.join(platforms),
-            status='active',
+            status=status_val,
+            start_date=start_dt,
+            end_date=end_dt,
             link_ttl_hours=ttl_hours,
             max_uses_per_link=max_uses,
             created_at=utcnow_naive()
@@ -149,8 +248,15 @@ def init_admin_routes(bp):
         db.session.commit()
 
         # Audit log
-        db.session.add(SecurityAuditLog(action='campaign_created', target=f"Campaign #{c.id}: {c.name}", details=f"Platforms: {c.target_platforms}"))
+        db.session.add(SecurityAuditLog(action='campaign_created', target=f"Campaign #{c.id}: {c.name}", details=f"Status: {c.status}, Platforms: {c.target_platforms}"))
         db.session.commit()
+
+        if wants_json:
+            return jsonify({
+                'status': 'success',
+                'message': f'Security testing campaign "{c.name}" created successfully.',
+                'campaign': _serialize_campaign(c),
+            }), 201
 
         flash(f'Security testing campaign "{c.name}" created successfully.', 'success')
         return redirect(url_for('security_platform.operations_dashboard'))
@@ -186,9 +292,21 @@ def init_admin_routes(bp):
         if max_uses is None:
             max_uses = request.form.get('max_usages', type=int) or 0
 
-        camp = db.session.get(TestingCampaign, cid)
+        camp = db.session.get(TestingCampaign, cid) if cid else None
         if not camp:
             flash('Select an active campaign.', 'danger')
+            return redirect(url_for('security_platform.operations_dashboard'))
+
+        if camp.status != 'active':
+            flash(f'Campaign "{camp.name}" is currently {camp.status}. Activate it before generating testing links.', 'danger')
+            return redirect(url_for('security_platform.operations_dashboard'))
+
+        allowed_scenarios = set(DEFAULT_SCENARIO_TEMPLATES.keys()) | {
+            'security_alert', 'recruitment', 'document_review',
+            'delivery_notice', 'account_update', 'credential_audit'
+        }
+        if scenario_key and scenario_key not in allowed_scenarios:
+            flash('Select a valid scenario template.', 'danger')
             return redirect(url_for('security_platform.operations_dashboard'))
 
         participant = None

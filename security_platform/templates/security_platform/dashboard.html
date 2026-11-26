@@ -116,20 +116,20 @@
                 
                 <div style="margin-bottom: 12px;">
                     <label style="display: block; font-size: 0.85rem; color: #ccd6f6; margin-bottom: 4px;">Target Campaign *</label>
-                    {% if campaigns %}
-                    <select name="campaign_id" required class="form-control" style="background: #0d1525; border: 1px solid #233554; color: #E0E7FF; padding: 8px; width: 100%; border-radius: 4px;">
-                        {% for c in campaigns %}
-                            <option value="{{ c.id }}">{{ c.name }} ({{ c.scenario_type|title }})</option>
+                    <select id="target-campaign-select" name="campaign_id" required class="form-control {% if not eligible_campaigns %}is-hidden{% endif %}" {% if not eligible_campaigns %}disabled{% endif %} style="background: #0d1525; border: 1px solid #233554; color: #E0E7FF; padding: 8px; width: 100%; border-radius: 4px;">
+                        {% for c in eligible_campaigns %}
+                            <option value="{{ c.id }}">{{ c.name }} ({{ c.scenario_type|replace('_', ' ')|title }})</option>
                         {% endfor %}
                     </select>
-                    {% else %}
-                    <select name="campaign_id" disabled class="form-control" style="background: #0d1525; border: 1px solid #c0392b; color: #8892B0; padding: 8px; width: 100%; border-radius: 4px;">
-                        <option value="">⚠ No campaigns yet — create one below first</option>
-                    </select>
-                    <p style="color: #e74c3c; font-size: 0.82rem; margin-top: 6px; margin-bottom: 0;">
-                        ⬇ Create a Security Campaign first using the form below, then generate testing links.
-                    </p>
-                    {% endif %}
+                    <div id="empty-campaigns-box" class="{% if eligible_campaigns %}is-hidden{% endif %}" style="background: rgba(192, 57, 43, 0.12); border: 1px solid #c0392b; border-radius: 6px; padding: 12px;">
+                        <div style="color: #ff6b6b; font-weight: bold; font-size: 0.9rem;">No Security Campaigns Available</div>
+                        <p style="color: #ccd6f6; font-size: 0.82rem; margin: 4px 0 10px;">
+                            Create your first campaign below to generate a real testing link.
+                        </p>
+                        <button type="button" onclick="scrollToCampaignForm()" class="btn btn-primary btn-sm" style="background: #7DF9FF; color: #080D18; border: none; padding: 6px 12px; border-radius: 4px; font-weight: bold; cursor: pointer;">
+                            Create Security Campaign ↓
+                        </button>
+                    </div>
                 </div>
 
                 <div style="margin-bottom: 12px;">
@@ -163,7 +163,7 @@
                     </div>
                 </div>
 
-                <button type="submit" class="btn btn-primary" style="width: 100%; padding: 10px; font-weight: bold; background: #7DF9FF; color: #080D18; border: none; border-radius: 4px; cursor: pointer;">
+                <button type="submit" id="link-submit-btn" class="btn btn-primary" {% if not eligible_campaigns %}disabled{% endif %} style="width: 100%; padding: 10px; font-weight: bold; background: #7DF9FF; color: #080D18; border: none; border-radius: 4px; cursor: pointer;">
                     ⚡ Generate Unique Testing Link & QR Code
                 </button>
             </form>
@@ -195,7 +195,7 @@
                         <th style="padding: 10px; text-align: right;">Actions</th>
                     </tr>
                 </thead>
-                <tbody>
+                <tbody id="campaigns-table-body">
                     {% for c in campaigns %}
                     <tr style="border-bottom: 1px solid #1a2a44;">
                         <td style="padding: 10px; color: #8892B0;">#{{ c.id }}</td>
@@ -231,6 +231,59 @@
                 </tbody>
             </table>
         </div>
+    </div>
+
+    <!-- Inline Create Security Campaign Card -->
+    <div id="create-campaign-card" style="background: rgba(17, 27, 45, 0.85); border: 1px solid #233554; border-radius: 8px; padding: 20px; margin-bottom: 30px;">
+        <h3 style="color: #7DF9FF; margin: 0 0 12px; font-size: 1.15rem;">
+            🛡️ Create a Security Campaign
+        </h3>
+        <div id="campaign-form-feedback" class="is-hidden" style="padding: 10px 14px; border-radius: 6px; margin-bottom: 12px; font-size: 0.88rem;"></div>
+        <form id="inline-campaign-form" method="POST" action="{{ url_for('security_platform.campaign_create') }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin-bottom: 12px;">
+                <div>
+                    <label style="display: block; font-size: 0.85rem; color: #ccd6f6; margin-bottom: 4px;">Campaign Name *</label>
+                    <input type="text" id="campaign-name-input" name="name" required placeholder="e.g., Q4 Phishing Awareness Assessment" class="form-control" style="width: 100%; padding: 8px; background: #0d1525; border: 1px solid #233554; color: #E0E7FF; border-radius: 4px;">
+                </div>
+                <div>
+                    <label style="display: block; font-size: 0.85rem; color: #ccd6f6; margin-bottom: 4px;">Campaign Objective</label>
+                    <input type="text" name="objective" placeholder="e.g., Measure MFA phishing reporting rate" class="form-control" style="width: 100%; padding: 8px; background: #0d1525; border: 1px solid #233554; color: #E0E7FF; border-radius: 4px;">
+                </div>
+                <div>
+                    <label style="display: block; font-size: 0.85rem; color: #ccd6f6; margin-bottom: 4px;">Scenario Template *</label>
+                    <select name="scenario_type" required class="form-control" style="width: 100%; padding: 8px; background: #0d1525; border: 1px solid #233554; color: #E0E7FF; border-radius: 4px;">
+                        <option value="security_alert">Urgent Security Alert Verification</option>
+                        <option value="recruitment">Recruitment / Executive Opportunity</option>
+                        <option value="document_review">Secure Document Review Request</option>
+                        <option value="delivery_notice">Package Delivery Notice</option>
+                        <option value="account_update">Account Access Re-verification</option>
+                    </select>
+                </div>
+                <div>
+                    <label style="display: block; font-size: 0.85rem; color: #ccd6f6; margin-bottom: 4px;">Campaign Status</label>
+                    <select name="status" class="form-control" style="width: 100%; padding: 8px; background: #0d1525; border: 1px solid #233554; color: #E0E7FF; border-radius: 4px;">
+                        <option value="active" selected>Active (Eligible for Link Generation)</option>
+                        <option value="paused">Paused</option>
+                    </select>
+                </div>
+                <div>
+                    <label style="display: block; font-size: 0.85rem; color: #ccd6f6; margin-bottom: 4px;">Start Date (Optional)</label>
+                    <input type="date" name="start_date" class="form-control" style="width: 100%; padding: 8px; background: #0d1525; border: 1px solid #233554; color: #E0E7FF; border-radius: 4px;">
+                </div>
+                <div>
+                    <label style="display: block; font-size: 0.85rem; color: #ccd6f6; margin-bottom: 4px;">End Date (Optional)</label>
+                    <input type="date" name="end_date" class="form-control" style="width: 100%; padding: 8px; background: #0d1525; border: 1px solid #233554; color: #E0E7FF; border-radius: 4px;">
+                </div>
+            </div>
+            <div style="margin-bottom: 12px;">
+                <label style="display: block; font-size: 0.85rem; color: #ccd6f6; margin-bottom: 4px;">Campaign Description</label>
+                <textarea name="description" rows="2" placeholder="Assessment scope, authorized participant group, and objectives..." class="form-control" style="width: 100%; padding: 8px; background: #0d1525; border: 1px solid #233554; color: #E0E7FF; border-radius: 4px;"></textarea>
+            </div>
+            <button type="submit" id="create-campaign-btn" class="btn btn-primary" style="background: #7DF9FF; color: #080D18; border: none; padding: 9px 20px; border-radius: 4px; font-weight: bold; cursor: pointer;">
+                + Create Security Campaign
+            </button>
+        </form>
     </div>
 
     <!-- Device & Browser Telemetry Breakdown -->
@@ -494,9 +547,127 @@
             .catch(function() {});
     }, 6000);
 })();
+
+function scrollToCampaignForm() {
+    var card = document.getElementById('create-campaign-card');
+    var input = document.getElementById('campaign-name-input');
+    if (card) card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    if (input) setTimeout(function() { input.focus(); }, 300);
+}
+
+(function() {
+    var form = document.getElementById('inline-campaign-form');
+    if (!form) return;
+
+    function refreshCampaignDropdown(selectId) {
+        return fetch("{{ url_for('security_platform.campaigns_list') }}")
+            .then(function(r) { return r.json(); })
+            .then(function(payload) {
+                if (payload.status !== 'success') return;
+                var select = document.getElementById('target-campaign-select');
+                var emptyBox = document.getElementById('empty-campaigns-box');
+                var submitBtn = document.getElementById('link-submit-btn');
+                var active = payload.active_campaigns || [];
+
+                if (!select) return;
+                select.innerHTML = '';
+                if (active.length > 0) {
+                    active.forEach(function(c) {
+                        var opt = document.createElement('option');
+                        opt.value = c.id;
+                        opt.textContent = c.name + ' (' + (c.scenario_type || '').replace(/_/g, ' ') + ')';
+                        if (selectId && String(c.id) === String(selectId)) {
+                            opt.selected = true;
+                        }
+                        select.appendChild(opt);
+                    });
+                    select.disabled = false;
+                    select.classList.remove('is-hidden');
+                    if (emptyBox) emptyBox.classList.add('is-hidden');
+                    if (submitBtn) submitBtn.disabled = false;
+                } else {
+                    select.disabled = true;
+                    select.classList.add('is-hidden');
+                    if (emptyBox) emptyBox.classList.remove('is-hidden');
+                    if (submitBtn) submitBtn.disabled = true;
+                }
+            });
+    }
+
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        var feedback = document.getElementById('campaign-form-feedback');
+        var btn = document.getElementById('create-campaign-btn');
+        var formData = new FormData(form);
+        var csrfToken = formData.get('csrf_token') || '';
+
+        if (btn) btn.disabled = true;
+        fetch(form.action, {
+            method: 'POST',
+            headers: {
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRFToken': csrfToken
+            },
+            body: formData
+        })
+        .then(function(r) { return r.json().then(function(d) { return { ok: r.ok, data: d }; }); })
+        .then(function(res) {
+            if (btn) btn.disabled = false;
+            if (res.ok && res.data.status === 'success') {
+                var c = res.data.campaign;
+                if (feedback) {
+                    feedback.textContent = res.data.message || 'Campaign created.';
+                    feedback.style.background = 'rgba(46, 204, 113, 0.18)';
+                    feedback.style.border = '1px solid #2ecc71';
+                    feedback.style.color = '#2ecc71';
+                    feedback.classList.remove('is-hidden');
+                }
+                form.reset();
+                refreshCampaignDropdown(c ? c.id : null);
+
+                // Also append to campaigns table immediately
+                var tbody = document.getElementById('campaigns-table-body');
+                if (tbody && c) {
+                    var tr = document.createElement('tr');
+                    tr.style.borderBottom = '1px solid #1a2a44';
+                    tr.innerHTML =
+                        '<td style="padding: 10px; color: #8892B0;">#' + c.id + '</td>' +
+                        '<td style="padding: 10px; font-weight: bold; color: #ccd6f6;">' + c.name + '</td>' +
+                        '<td style="padding: 10px;"><span style="background: rgba(125, 249, 255, 0.1); color: #7DF9FF; padding: 2px 8px; border-radius: 4px; font-size: 0.8rem;">' + c.scenario_type + '</span></td>' +
+                        '<td style="padding: 10px;"><span style="color: ' + (c.status === 'active' ? '#2ecc71' : '#f39c12') + '; font-weight: bold;">' + (c.status === 'active' ? '● Active' : '⏸ Paused') + '</span></td>' +
+                        '<td style="padding: 10px; color: #ccd6f6;">0</td>' +
+                        '<td style="padding: 10px; color: #FFCC00; font-weight: bold;">0</td>' +
+                        '<td style="padding: 10px; color: #8892B0; font-size: 0.8rem;">' + (c.created_at || '') + '</td>' +
+                        '<td style="padding: 10px; text-align: right;"><a href="/security/reports/print/' + c.id + '" target="_blank" class="btn btn-secondary btn-sm" style="padding: 4px 8px; font-size: 0.75rem;">Summary</a></td>';
+                    tbody.insertBefore(tr, tbody.firstChild);
+                }
+            } else {
+                if (feedback) {
+                    feedback.textContent = (res.data && res.data.message) || 'Failed to create campaign.';
+                    feedback.style.background = 'rgba(231, 76, 60, 0.18)';
+                    feedback.style.border = '1px solid #e74c3c';
+                    feedback.style.color = '#e74c3c';
+                    feedback.classList.remove('is-hidden');
+                }
+            }
+        })
+        .catch(function(err) {
+            if (btn) btn.disabled = false;
+            if (feedback) {
+                feedback.textContent = 'Network error creating campaign: ' + err;
+                feedback.style.background = 'rgba(231, 76, 60, 0.18)';
+                feedback.style.border = '1px solid #e74c3c';
+                feedback.style.color = '#e74c3c';
+                feedback.classList.remove('is-hidden');
+            }
+        });
+    });
+})();
 </script>
 
 <style>
+.is-hidden { display: none !important; }
 .evt-label { font-weight: bold; }
 .evt-reported { color: #2ecc71; }
 .evt-file { color: #e67e22; }
